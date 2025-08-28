@@ -1,0 +1,21 @@
+{
+  "name": "weather-app-server",
+  "version": "1.0.0",
+  "description": "Local JSON server for weather app data",
+  "main": "server.js",
+  "scripts": {
+    "start": "json-server --watch ../data/weatherData.json --port 3001 --host 0.0.0.0",
+    "dev": "json-server --watch ../data/weatherData.json --port 3001 --host 0.0.0.0"
+  },
+  "dependencies": {
+    "json-server": "^0.17.4"
+  },
+  "devDependencies": {},
+  "keywords": [
+    "weather",
+    "json-server",
+    "api"
+  ],
+  "author": "",
+  "license": "MIT"
+}

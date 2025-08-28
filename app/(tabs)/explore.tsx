@@ -1,110 +1,273 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { fetchWeatherByCity, WeatherData } from "@/utils/api";
+import { Ionicons } from "@expo/vector-icons";
+import { useState } from "react";
+import {
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-import { Collapsible } from '@/components/Collapsible';
-import { ExternalLink } from '@/components/ExternalLink';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
+export default function ExploreScreen() {
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResult, setSearchResult] = useState<WeatherData | null>(null);
+  const [searching, setSearching] = useState(false);
 
-export default function TabTwoScreen() {
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) {
+      Alert.alert("Error", "Please enter a city name");
+      return;
+    }
+
+    try {
+      setSearching(true);
+      const result = await fetchWeatherByCity(searchQuery.trim());
+      setSearchResult(result);
+
+      if (!result) {
+        Alert.alert("Not Found", `Weather data not found for ${searchQuery}`);
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to search for weather data");
+      console.error("Search error:", error);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setSearchResult(null);
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#D0D0D0', dark: '#353636' }}
-      headerImage={
-        <IconSymbol
-          size={310}
-          color="#808080"
-          name="chevron.left.forwardslash.chevron.right"
-          style={styles.headerImage}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Explore</ThemedText>
-      </ThemedView>
-      <ThemedText>This app includes example code to help you get started.</ThemedText>
-      <Collapsible title="File-based routing">
-        <ThemedText>
-          This app has two screens:{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">app/(tabs)/explore.tsx</ThemedText>
-        </ThemedText>
-        <ThemedText>
-          The layout file in <ThemedText type="defaultSemiBold">app/(tabs)/_layout.tsx</ThemedText>{' '}
-          sets up the tab navigator.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/router/introduction">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Android, iOS, and web support">
-        <ThemedText>
-          You can open this project on Android, iOS, and the web. To open the web version, press{' '}
-          <ThemedText type="defaultSemiBold">w</ThemedText> in the terminal running this project.
-        </ThemedText>
-      </Collapsible>
-      <Collapsible title="Images">
-        <ThemedText>
-          For static images, you can use the <ThemedText type="defaultSemiBold">@2x</ThemedText> and{' '}
-          <ThemedText type="defaultSemiBold">@3x</ThemedText> suffixes to provide files for
-          different screen densities
-        </ThemedText>
-        <Image source={require('@/assets/images/react-logo.png')} style={{ alignSelf: 'center' }} />
-        <ExternalLink href="https://reactnative.dev/docs/images">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Custom fonts">
-        <ThemedText>
-          Open <ThemedText type="defaultSemiBold">app/_layout.tsx</ThemedText> to see how to load{' '}
-          <ThemedText style={{ fontFamily: 'SpaceMono' }}>
-            custom fonts such as this one.
-          </ThemedText>
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/versions/latest/sdk/font">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Light and dark mode components">
-        <ThemedText>
-          This template has light and dark mode support. The{' '}
-          <ThemedText type="defaultSemiBold">useColorScheme()</ThemedText> hook lets you inspect
-          what the user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-        </ThemedText>
-        <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-          <ThemedText type="link">Learn more</ThemedText>
-        </ExternalLink>
-      </Collapsible>
-      <Collapsible title="Animations">
-        <ThemedText>
-          This template includes an example of an animated component. The{' '}
-          <ThemedText type="defaultSemiBold">components/HelloWave.tsx</ThemedText> component uses
-          the powerful <ThemedText type="defaultSemiBold">react-native-reanimated</ThemedText>{' '}
-          library to create a waving hand animation.
-        </ThemedText>
-        {Platform.select({
-          ios: (
-            <ThemedText>
-              The <ThemedText type="defaultSemiBold">components/ParallaxScrollView.tsx</ThemedText>{' '}
-              component provides a parallax effect for the header image.
-            </ThemedText>
-          ),
-        })}
-      </Collapsible>
-    </ParallaxScrollView>
+    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+      <View style={styles.header}>
+        <Ionicons name="search" size={32} color="#4A90E2" />
+        <Text style={styles.title}>Weather Search</Text>
+      </View>
+
+      <View style={styles.searchContainer}>
+        <View style={styles.searchInputContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Enter city name..."
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            onSubmitEditing={handleSearch}
+          />
+          <TouchableOpacity
+            style={styles.searchButton}
+            onPress={handleSearch}
+            disabled={searching}
+          >
+            <Ionicons
+              name={searching ? "hourglass" : "search"}
+              size={20}
+              color="white"
+            />
+          </TouchableOpacity>
+        </View>
+
+        {searchQuery.length > 0 && (
+          <TouchableOpacity style={styles.clearButton} onPress={clearSearch}>
+            <Text style={styles.clearButtonText}>Clear</Text>
+          </TouchableOpacity>
+        )}
+      </View>
+
+      {searchResult && (
+        <View style={styles.resultContainer}>
+          <Text style={styles.resultTitle}>Weather in {searchResult.city}</Text>
+
+          <View style={styles.weatherInfo}>
+            <View style={styles.temperatureSection}>
+              <Text style={styles.temperature}>
+                {searchResult.temperature}°C
+              </Text>
+              <Text style={styles.condition}>{searchResult.condition}</Text>
+            </View>
+
+            <View style={styles.detailsGrid}>
+              <View style={styles.detailCard}>
+                <Ionicons name="water" size={24} color="#4A90E2" />
+                <Text style={styles.detailLabel}>Humidity</Text>
+                <Text style={styles.detailValue}>{searchResult.humidity}%</Text>
+              </View>
+
+              <View style={styles.detailCard}>
+                <Ionicons name="airplane" size={24} color="#4A90E2" />
+                <Text style={styles.detailLabel}>Wind Speed</Text>
+                <Text style={styles.detailValue}>
+                  {searchResult.windSpeed} km/h
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      )}
+
+      <View style={styles.infoContainer}>
+        <Text style={styles.infoTitle}>Available Cities</Text>
+        <Text style={styles.infoText}>
+          New York, London, Dubai, Tokyo, Paris, Sydney, Mumbai, Cairo, Toronto,
+          Berlin
+        </Text>
+      </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  headerImage: {
-    color: '#808080',
-    bottom: -90,
-    left: -35,
-    position: 'absolute',
+  container: {
+    flex: 1,
+    backgroundColor: "#F5F5F5",
   },
-  titleContainer: {
-    flexDirection: 'row',
-    gap: 8,
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 20,
+    backgroundColor: "white",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E0E0E0",
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "600",
+    color: "#333",
+    marginLeft: 12,
+  },
+  searchContainer: {
+    padding: 20,
+    backgroundColor: "white",
+    margin: 16,
+    borderRadius: 16,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  searchInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  searchInput: {
+    flex: 1,
+    height: 50,
+    borderWidth: 1,
+    borderColor: "#E0E0E0",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    marginRight: 12,
+  },
+  searchButton: {
+    backgroundColor: "#4A90E2",
+    height: 50,
+    width: 50,
+    borderRadius: 12,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  clearButton: {
+    alignSelf: "flex-end",
+    marginTop: 12,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+  },
+  clearButtonText: {
+    color: "#666",
+    fontSize: 14,
+  },
+  resultContainer: {
+    backgroundColor: "white",
+    margin: 16,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  resultTitle: {
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  weatherInfo: {
+    alignItems: "center",
+  },
+  temperatureSection: {
+    alignItems: "center",
+    marginBottom: 24,
+  },
+  temperature: {
+    fontSize: 48,
+    fontWeight: "700",
+    color: "#4A90E2",
+    marginBottom: 8,
+  },
+  condition: {
+    fontSize: 18,
+    color: "#666",
+  },
+  detailsGrid: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
+  },
+  detailCard: {
+    alignItems: "center",
+    flex: 1,
+  },
+  detailLabel: {
+    fontSize: 14,
+    color: "#666",
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  detailValue: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+  },
+  infoContainer: {
+    backgroundColor: "white",
+    margin: 16,
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  infoTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
+    marginBottom: 12,
+  },
+  infoText: {
+    fontSize: 14,
+    color: "#666",
+    lineHeight: 20,
   },
 });
