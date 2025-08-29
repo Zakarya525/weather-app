@@ -1,12 +1,14 @@
 import { Ionicons } from "@expo/vector-icons";
 import React from "react";
 import {
+  Alert,
   Dimensions,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { useFavorites } from "../contexts/FavoritesContext";
 import { useTemperature } from "../contexts/TemperatureContext";
 import { WeatherData } from "../utils/api";
 
@@ -59,6 +61,26 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
 }) => {
   const weatherColor = getWeatherColor(weather.condition);
   const { getTemperatureDisplay } = useTemperature();
+  const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites();
+
+  const handleFavoritePress = async (e: any) => {
+    e.stopPropagation(); // Prevent triggering the card's onPress
+
+    try {
+      if (isFavorite(weather.id)) {
+        await removeFromFavorites(weather.id);
+        Alert.alert(
+          "Removed",
+          `${weather.city} has been removed from favorites`
+        );
+      } else {
+        await addToFavorites(weather);
+        Alert.alert("Added", `${weather.city} has been added to favorites`);
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to update favorites");
+    }
+  };
 
   if (isCompact) {
     return (
@@ -69,11 +91,24 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
       >
         <View style={styles.compactHeader}>
           <Text style={styles.compactCityName}>{weather.city}</Text>
-          <Ionicons
-            name={getWeatherIcon(weather.condition) as any}
-            size={24}
-            color={weatherColor}
-          />
+          <View style={styles.compactHeaderRight}>
+            <Ionicons
+              name={getWeatherIcon(weather.condition) as any}
+              size={24}
+              color={weatherColor}
+            />
+            <TouchableOpacity
+              style={styles.compactFavoriteButton}
+              onPress={handleFavoritePress}
+              activeOpacity={0.7}
+            >
+              <Ionicons
+                name={isFavorite(weather.id) ? "star" : "star-outline"}
+                size={20}
+                color={isFavorite(weather.id) ? "#FFD700" : "#666"}
+              />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.compactTemperatureContainer}>
@@ -103,11 +138,24 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
       <View style={styles.header}>
         <Text style={styles.cityName}>{weather.city}</Text>
-        <Ionicons
-          name={getWeatherIcon(weather.condition) as any}
-          size={32}
-          color={weatherColor}
-        />
+        <View style={styles.headerRight}>
+          <Ionicons
+            name={getWeatherIcon(weather.condition) as any}
+            size={32}
+            color={weatherColor}
+          />
+          <TouchableOpacity
+            style={styles.favoriteButton}
+            onPress={handleFavoritePress}
+            activeOpacity={0.7}
+          >
+            <Ionicons
+              name={isFavorite(weather.id) ? "star" : "star-outline"}
+              size={24}
+              color={isFavorite(weather.id) ? "#FFD700" : "#666"}
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.temperatureContainer}>
@@ -175,6 +223,22 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 12,
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  compactHeaderRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  favoriteButton: {
+    padding: 4,
+  },
+  compactFavoriteButton: {
+    padding: 2,
   },
   cityName: {
     fontSize: Math.max(20, screenWidth * 0.05),

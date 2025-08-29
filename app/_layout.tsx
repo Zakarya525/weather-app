@@ -9,6 +9,7 @@ import { StatusBar } from "expo-status-bar";
 import "react-native-reanimated";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { TemperatureProvider } from "@/contexts/TemperatureContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
 
@@ -26,15 +27,17 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <TemperatureProvider>
-        <ThemeProvider
-          value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-        >
-          <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="+not-found" />
-          </Stack>
-          <StatusBar style="auto" />
-        </ThemeProvider>
+        <FavoritesProvider>
+          <ThemeProvider
+            value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
+          >
+            <Stack>
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="+not-found" />
+            </Stack>
+            <StatusBar style="auto" />
+          </ThemeProvider>
+        </FavoritesProvider>
       </TemperatureProvider>
     </SafeAreaProvider>
   );
