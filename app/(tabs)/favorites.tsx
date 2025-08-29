@@ -1,12 +1,23 @@
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { TemperatureToggle } from "@/components/TemperatureToggle";
 import { WeatherCard } from "@/components/WeatherCard";
+import { WeatherGradient } from "@/components/WeatherGradient";
+import {
+  Animations,
+  BorderRadius,
+  Colors,
+  GlassMorphism,
+  Shadows,
+  Spacing,
+  Typography,
+} from "@/constants/DesignSystem";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { WeatherData } from "@/utils/api";
-import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useState } from "react";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import React, { useCallback, useState } from "react";
 import {
   Alert,
+  Animated,
   Dimensions,
   FlatList,
   RefreshControl,
@@ -23,6 +34,17 @@ export default function FavoritesScreen() {
   const { favorites, loading, removeFromFavorites, clearAllFavorites } =
     useFavorites();
   const [refreshing, setRefreshing] = useState(false);
+
+  // Animation values
+  const fadeValue = useState(new Animated.Value(0))[0];
+
+  React.useEffect(() => {
+    Animated.timing(fadeValue, {
+      toValue: 1,
+      duration: Animations.timing.normal,
+      useNativeDriver: true,
+    }).start();
+  }, []);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -86,13 +108,6 @@ export default function FavoritesScreen() {
           onPress={() => handleCityPress(item.city)}
           isCompact={screenWidth < 400}
         />
-        <TouchableOpacity
-          style={styles.removeButton}
-          onPress={() => handleRemoveFromFavorites(item)}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="heart-dislike" size={24} color="#FF3B30" />
-        </TouchableOpacity>
       </View>
     ),
     [handleCityPress, handleRemoveFromFavorites]
@@ -142,60 +157,87 @@ export default function FavoritesScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View style={styles.headerLeft}>
-            <Ionicons
-              name="heart"
-              size={Math.max(32, screenWidth * 0.08)}
-              color="#FF3B30"
-            />
-          </View>
-          <TemperatureToggle style={styles.temperatureToggle} />
-        </View>
-        <Text style={styles.title}>Favorite Cities</Text>
-        <Text style={styles.subtitle}>
-          Your personalized weather collection
-        </Text>
-      </View>
-
-      <FlatList
-        data={favorites}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderWeatherCard}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.listContainer,
-          favorites.length === 0 && styles.emptyListContainer,
-        ]}
-        ListHeaderComponent={favorites.length > 0 ? renderHeader : null}
-        ListEmptyComponent={renderEmptyState}
-        initialNumToRender={5}
-        maxToRenderPerBatch={10}
-        windowSize={10}
-        removeClippedSubviews={true}
-        numColumns={1}
+    <View style={styles.container}>
+      <WeatherGradient
+        condition={favorites[0]?.condition || "partly cloudy"}
+        intensity={0.2}
+        style={styles.backgroundGradient}
       />
-    </SafeAreaView>
+      <SafeAreaView style={styles.safeArea}>
+        <Animated.View
+          style={[styles.contentContainer, { opacity: fadeValue }]}
+        >
+          <View style={styles.header}>
+            <View style={styles.headerTop}>
+              <View style={styles.headerLeft}>
+                <MaterialCommunityIcons
+                  name="heart"
+                  size={Math.max(32, screenWidth * 0.08)}
+                  color={Colors.error[500]}
+                />
+              </View>
+              <TemperatureToggle style={styles.temperatureToggle} />
+            </View>
+            <Text style={styles.title}>Favorite Cities</Text>
+            <Text style={styles.subtitle}>
+              Your personalized weather collection
+            </Text>
+          </View>
+
+          <FlatList
+            data={favorites}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderWeatherCard}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={[
+              styles.listContainer,
+              favorites.length === 0 && styles.emptyListContainer,
+            ]}
+            ListHeaderComponent={favorites.length > 0 ? renderHeader : null}
+            ListEmptyComponent={renderEmptyState}
+            initialNumToRender={5}
+            maxToRenderPerBatch={10}
+            windowSize={10}
+            removeClippedSubviews={true}
+            numColumns={1}
+          />
+        </Animated.View>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: Colors.neutral[50],
+  },
+  backgroundGradient: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  safeArea: {
+    flex: 1,
+  },
+  contentContainer: {
+    flex: 1,
   },
   header: {
+    ...GlassMorphism.light,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: Math.max(20, screenHeight * 0.025),
-    backgroundColor: "white",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    paddingVertical: Spacing.responsive.lg,
+    marginHorizontal: Spacing.responsive.base,
+    marginTop: Spacing.responsive.base,
+    borderRadius: BorderRadius.xl,
+    ...Shadows.md,
+    borderWidth: 0,
   },
   headerTop: {
     flexDirection: "row",
@@ -211,16 +253,17 @@ const styles = StyleSheet.create({
     marginRight: 0,
   },
   title: {
-    fontSize: Math.max(24, screenWidth * 0.06),
-    fontWeight: "600",
-    color: "#333",
-    marginTop: 12,
-    marginBottom: 4,
+    fontSize: Typography.fontSize["2xl"],
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.neutral[900],
+    marginTop: Spacing.md,
+    marginBottom: Spacing.xs,
+    letterSpacing: Typography.letterSpacing.tight,
   },
   subtitle: {
-    fontSize: Math.max(14, screenWidth * 0.035),
-    color: "#666",
-    fontWeight: "400",
+    fontSize: Typography.fontSize.base,
+    color: Colors.neutral[600],
+    fontWeight: Typography.fontWeight.medium,
   },
   listContainer: {
     paddingVertical: Math.max(16, screenHeight * 0.02),

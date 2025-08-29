@@ -2,10 +2,22 @@ import { ErrorMessage } from "@/components/ErrorMessage";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { TemperatureToggle } from "@/components/TemperatureToggle";
 import { WeatherCard } from "@/components/WeatherCard";
+import { WeatherGradient } from "@/components/WeatherGradient";
+import {
+  Animations,
+  BorderRadius,
+  Colors,
+  GlassMorphism,
+  Shadows,
+  Spacing,
+  Typography,
+} from "@/constants/DesignSystem";
 import { fetchWeatherData, WeatherData } from "@/utils/api";
-import { Ionicons } from "@expo/vector-icons";
+import { getAccessibleWeatherTheme } from "@/utils/weatherTheme";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
 import {
+  Animated,
   Dimensions,
   FlatList,
   RefreshControl,
@@ -22,6 +34,18 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [currentWeatherIndex, setCurrentWeatherIndex] = useState(0);
+
+  // Enhanced animations
+  const fadeValue = useState(new Animated.Value(1))[0];
+  const headerSlideValue = useState(new Animated.Value(-100))[0];
+  const cardStaggerValue = useState(new Animated.Value(0))[0];
+
+  // Get the current weather condition for background theming
+  const currentWeather = weatherData[currentWeatherIndex];
+  const currentTheme = currentWeather
+    ? getAccessibleWeatherTheme(currentWeather.condition)
+    : getAccessibleWeatherTheme("partly cloudy");
 
   const loadWeatherData = useCallback(async () => {
     try {
@@ -29,6 +53,22 @@ export default function HomeScreen() {
       setError(null);
       const data = await fetchWeatherData();
       setWeatherData(data);
+
+      // Animate header entrance
+      Animated.sequence([
+        Animated.timing(headerSlideValue, {
+          toValue: 0,
+          duration: Animations.timing.normal,
+          useNativeDriver: true,
+        }),
+        Animated.stagger(100, [
+          Animated.timing(cardStaggerValue, {
+            toValue: 1,
+            duration: Animations.timing.slow,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]).start();
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Failed to load weather data";
@@ -37,7 +77,7 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [headerSlideValue, cardStaggerValue]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -49,16 +89,35 @@ export default function HomeScreen() {
     loadWeatherData();
   }, [loadWeatherData]);
 
-  const handleCityPress = useCallback((city: string) => {
-    // You can navigate to a detailed view here
-    console.log(`City selected: ${city}`);
-  }, []);
+  const handleCityPress = useCallback(
+    (city: string, index: number) => {
+      // Update the current weather index for background theming
+      setCurrentWeatherIndex(index);
+
+      // Animate background transition
+      Animated.sequence([
+        Animated.timing(fadeValue, {
+          toValue: 0.7,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+        Animated.timing(fadeValue, {
+          toValue: 1,
+          duration: 150,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+      console.log(`City selected: ${city}`);
+    },
+    [fadeValue]
+  );
 
   const renderWeatherCard = useCallback(
-    ({ item }: { item: WeatherData }) => (
+    ({ item, index }: { item: WeatherData; index: number }) => (
       <WeatherCard
         weather={item}
-        onPress={() => handleCityPress(item.city)}
+        onPress={() => handleCityPress(item.city, index)}
         isCompact={screenWidth < 400}
       />
     ),
@@ -68,7 +127,7 @@ export default function HomeScreen() {
   const renderEmptyState = useCallback(
     () => (
       <View style={styles.emptyContainer}>
-        <Ionicons name="cloud-offline" size={64} color="#CCC" />
+        <Ionicons name="cloud-offline" size={64} color={Colors.neutral[400]} />
         <Text style={styles.emptyTitle}>No Weather Data</Text>
         <Text style={styles.emptyText}>
           Pull down to refresh or check your connection
@@ -94,62 +153,113 @@ export default function HomeScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerTop}>
-          <View style={styles.headerLeft}>
-            <Ionicons
-              name="partly-sunny"
-              size={Math.max(32, screenWidth * 0.08)}
-              color="#4A90E2"
-            />
-          </View>
-          <TemperatureToggle style={styles.temperatureToggle} />
-        </View>
-        <Text style={styles.title}>Weather App</Text>
-        <Text style={styles.subtitle}>
-          {weatherData.length} cities available
-        </Text>
-      </View>
-
-      <FlatList
-        data={weatherData}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={renderWeatherCard}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContainer}
-        ListEmptyComponent={renderEmptyState}
-        initialNumToRender={5}
-        maxToRenderPerBatch={10}
-        windowSize={10}
-        removeClippedSubviews={true}
+    <View style={styles.container}>
+      <WeatherGradient
+        condition={currentWeather?.condition || "partly cloudy"}
+        intensity={0.3}
+        style={styles.backgroundGradient}
       />
-    </SafeAreaView>
+      <Animated.View style={[styles.contentContainer, { opacity: fadeValue }]}>
+        <SafeAreaView style={styles.safeArea}>
+          <Animated.View
+            style={[
+              styles.header,
+              {
+                transform: [{ translateY: headerSlideValue }],
+              },
+            ]}
+          >
+            <View style={styles.headerTop}>
+              <View style={styles.headerLeft}>
+                <MaterialCommunityIcons
+                  name={
+                    currentWeather
+                      ? currentWeather.condition.toLowerCase().includes("sunny")
+                        ? "weather-sunny"
+                        : currentWeather.condition
+                            .toLowerCase()
+                            .includes("rain")
+                        ? "weather-rainy"
+                        : currentWeather.condition
+                            .toLowerCase()
+                            .includes("cloud")
+                        ? "weather-cloudy"
+                        : "weather-partly-cloudy"
+                      : "weather-partly-cloudy"
+                  }
+                  size={Math.max(32, screenWidth * 0.08)}
+                  color={currentTheme.primaryColor}
+                />
+              </View>
+              <TemperatureToggle style={styles.temperatureToggle} />
+            </View>
+            <Text style={styles.title}>Weather App</Text>
+            <Text style={styles.subtitle}>
+              {weatherData.length} cities available
+            </Text>
+          </Animated.View>
+
+          <FlatList
+            data={weatherData}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderWeatherCard}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor={currentTheme.primaryColor}
+                colors={[currentTheme.primaryColor]}
+              />
+            }
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.listContainer}
+            ListEmptyComponent={renderEmptyState}
+            initialNumToRender={5}
+            maxToRenderPerBatch={10}
+            windowSize={10}
+            removeClippedSubviews={true}
+          />
+        </SafeAreaView>
+      </Animated.View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    backgroundColor: Colors.neutral[50],
+  },
+  backgroundGradient: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  contentContainer: {
+    flex: 1,
+  },
+  safeArea: {
+    flex: 1,
   },
   header: {
+    ...GlassMorphism.light,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: Math.max(20, screenHeight * 0.025),
-    backgroundColor: "white",
-    borderBottomWidth: 1,
-    borderBottomColor: "#E0E0E0",
+    paddingVertical: Spacing.responsive.lg,
+    marginHorizontal: Spacing.responsive.base,
+    marginTop: Spacing.responsive.base,
+    borderRadius: BorderRadius.xl,
+    ...Shadows.md,
+    borderWidth: 0,
   },
   headerTop: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     width: "100%",
-    paddingHorizontal: Math.max(20, screenWidth * 0.05),
+    paddingHorizontal: Spacing.responsive.lg,
   },
   headerLeft: {
     flex: 1,
@@ -158,38 +268,42 @@ const styles = StyleSheet.create({
     marginRight: 0,
   },
   title: {
-    fontSize: Math.max(24, screenWidth * 0.06),
-    fontWeight: "600",
-    color: "#333",
-    marginTop: 12,
-    marginBottom: 4,
+    fontSize: Typography.fontSize["3xl"],
+    fontWeight: Typography.fontWeight.bold,
+    color: Colors.neutral[900],
+    marginTop: Spacing.md,
+    marginBottom: Spacing.xs,
+    letterSpacing: Typography.letterSpacing.tight,
   },
   subtitle: {
-    fontSize: Math.max(14, screenWidth * 0.035),
-    color: "#666",
-    fontWeight: "400",
+    fontSize: Typography.fontSize.base,
+    color: Colors.neutral[600],
+    fontWeight: Typography.fontWeight.medium,
   },
   listContainer: {
-    paddingVertical: Math.max(16, screenHeight * 0.02),
-    paddingBottom: Math.max(20, screenHeight * 0.025),
+    paddingVertical: Spacing.responsive.lg,
+    paddingBottom: Spacing.responsive["2xl"],
+    paddingHorizontal: Spacing.xs,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    paddingVertical: Math.max(40, screenHeight * 0.05),
+    paddingVertical: Spacing.responsive["3xl"],
+    paddingHorizontal: Spacing.responsive.lg,
   },
   emptyTitle: {
-    fontSize: Math.max(20, screenWidth * 0.05),
-    fontWeight: "600",
-    color: "#666",
-    marginTop: 16,
-    marginBottom: 8,
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.semiBold,
+    color: Colors.neutral[600],
+    marginTop: Spacing.lg,
+    marginBottom: Spacing.sm,
+    textAlign: "center",
   },
   emptyText: {
-    fontSize: Math.max(14, screenWidth * 0.035),
-    color: "#999",
+    fontSize: Typography.fontSize.base,
+    color: Colors.neutral[500],
     textAlign: "center",
-    paddingHorizontal: Math.max(20, screenWidth * 0.05),
+    lineHeight: Typography.lineHeight.relaxed,
   },
 });

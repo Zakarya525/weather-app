@@ -1,16 +1,35 @@
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import React from "react";
 import {
   Alert,
+  Animated,
   Dimensions,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import {
+  Animations,
+  BorderRadius,
+  Colors,
+  GlassMorphism,
+  Shadows,
+  Spacing,
+  Typography,
+} from "../constants/DesignSystem";
 import { useFavorites } from "../contexts/FavoritesContext";
 import { useTemperature } from "../contexts/TemperatureContext";
+import {
+  getWeatherCardAccessibilityHint,
+  getWeatherDescription,
+} from "../utils/accessibility";
 import { WeatherData } from "../utils/api";
+import {
+  getAccessibleWeatherTheme,
+  getWeatherIconName,
+} from "../utils/weatherTheme";
+import { WeatherCardGradient } from "./WeatherGradient";
 
 const { width: screenWidth } = Dimensions.get("window");
 
@@ -20,38 +39,10 @@ interface WeatherCardProps {
   isCompact?: boolean;
 }
 
+// Enhanced weather icon mapping using MaterialCommunityIcons for better weather representation
 const getWeatherIcon = (condition: string) => {
-  switch (condition.toLowerCase()) {
-    case "sunny":
-      return "sunny";
-    case "cloudy":
-      return "cloudy";
-    case "rainy":
-      return "rainy";
-    case "partly cloudy":
-      return "partly-sunny";
-    case "humid":
-      return "water";
-    default:
-      return "partly-sunny";
-  }
-};
-
-const getWeatherColor = (condition: string) => {
-  switch (condition.toLowerCase()) {
-    case "sunny":
-      return "#FF9500";
-    case "cloudy":
-      return "#8E8E93";
-    case "rainy":
-      return "#007AFF";
-    case "partly cloudy":
-      return "#5AC8FA";
-    case "humid":
-      return "#34C759";
-    default:
-      return "#5AC8FA";
-  }
+  const iconName = getWeatherIconName(condition);
+  return iconName;
 };
 
 export const WeatherCard: React.FC<WeatherCardProps> = ({
@@ -59,9 +50,77 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
   onPress,
   isCompact = false,
 }) => {
-  const weatherColor = getWeatherColor(weather.condition);
+  const theme = getAccessibleWeatherTheme(weather.condition);
   const { getTemperatureDisplay } = useTemperature();
   const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites();
+
+  // Enhanced animations
+  const scaleValue = React.useRef(new Animated.Value(1)).current;
+  const fadeValue = React.useRef(new Animated.Value(0)).current;
+  const glowValue = React.useRef(new Animated.Value(0)).current;
+  const rotateValue = React.useRef(new Animated.Value(0)).current;
+
+  // Accessibility labels and hints
+  const accessibilityLabel = getWeatherDescription(weather);
+  const accessibilityHint = getWeatherCardAccessibilityHint(
+    weather.city,
+    weather.condition
+  );
+
+  React.useEffect(() => {
+    // Staggered entrance animation
+    Animated.sequence([
+      Animated.timing(fadeValue, {
+        toValue: 1,
+        duration: Animations.timing.normal,
+        useNativeDriver: true,
+      }),
+      Animated.timing(glowValue, {
+        toValue: 1,
+        duration: Animations.timing.slow,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Icon rotation animation
+    Animated.loop(
+      Animated.timing(rotateValue, {
+        toValue: 1,
+        duration: 10000,
+        useNativeDriver: true,
+      })
+    ).start();
+  }, [weather.condition]);
+
+  const handlePressIn = () => {
+    Animated.parallel([
+      Animated.spring(scaleValue, {
+        toValue: 0.95,
+        ...Animations.spring.snappy,
+        useNativeDriver: true,
+      }),
+      Animated.timing(glowValue, {
+        toValue: 1.5,
+        duration: Animations.timing.fast,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.parallel([
+      Animated.spring(scaleValue, {
+        toValue: 1,
+        ...Animations.spring.gentle,
+        useNativeDriver: true,
+      }),
+      Animated.timing(glowValue, {
+        toValue: 1,
+        duration: Animations.timing.normal,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  };
 
   const handleFavoritePress = async (e: any) => {
     e.stopPropagation(); // Prevent triggering the card's onPress
@@ -84,226 +143,378 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
 
   if (isCompact) {
     return (
-      <TouchableOpacity
-        style={styles.compactCard}
-        onPress={onPress}
-        activeOpacity={0.7}
+      <Animated.View
+        style={[
+          {
+            transform: [{ scale: scaleValue }],
+            opacity: fadeValue,
+          },
+        ]}
       >
-        <View style={styles.compactHeader}>
-          <Text style={styles.compactCityName}>{weather.city}</Text>
-          <View style={styles.compactHeaderRight}>
-            <Ionicons
-              name={getWeatherIcon(weather.condition) as any}
-              size={24}
-              color={weatherColor}
-            />
-            <TouchableOpacity
-              style={styles.compactFavoriteButton}
-              onPress={handleFavoritePress}
-              activeOpacity={0.7}
-            >
-              <Ionicons
-                name={isFavorite(weather.id) ? "star" : "star-outline"}
-                size={20}
-                color={isFavorite(weather.id) ? "#FFD700" : "#666"}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
+        <TouchableOpacity
+          style={[
+            styles.compactCard,
+            {
+              backgroundColor: theme.cardBackgroundColor,
+              shadowColor: theme.shadowColor,
+            },
+          ]}
+          onPress={onPress}
+          onPressIn={handlePressIn}
+          onPressOut={handlePressOut}
+          activeOpacity={0.9}
+          accessible={true}
+          accessibilityLabel={accessibilityLabel}
+          accessibilityHint={accessibilityHint}
+          accessibilityRole="button"
+        >
+          <WeatherCardGradient
+            condition={weather.condition}
+            style={styles.gradientOverlay}
+          />
+          <View style={styles.cardContent}>
+            <View style={styles.compactHeader}>
+              <Text
+                style={[styles.compactCityName, { color: Colors.neutral[900] }]}
+              >
+                {weather.city}
+              </Text>
+              <View style={styles.compactHeaderRight}>
+                <MaterialCommunityIcons
+                  name={getWeatherIcon(weather.condition) as any}
+                  size={24}
+                  color={theme.iconColor}
+                />
+                <TouchableOpacity
+                  style={styles.compactFavoriteButton}
+                  onPress={handleFavoritePress}
+                  activeOpacity={0.7}
+                  accessible={true}
+                  accessibilityLabel={
+                    isFavorite(weather.id)
+                      ? `Remove ${weather.city} from favorites`
+                      : `Add ${weather.city} to favorites`
+                  }
+                  accessibilityRole="button"
+                >
+                  <Ionicons
+                    name={isFavorite(weather.id) ? "star" : "star-outline"}
+                    size={20}
+                    color={
+                      isFavorite(weather.id) ? "#FFD700" : Colors.neutral[700]
+                    }
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
 
-        <View style={styles.compactTemperatureContainer}>
-          <Text style={styles.compactTemperature}>
-            {getTemperatureDisplay(weather.temperature)}
-          </Text>
-          <Text style={styles.compactCondition}>{weather.condition}</Text>
-        </View>
+            <View style={styles.compactTemperatureContainer}>
+              <Text
+                style={[
+                  styles.compactTemperature,
+                  { color: theme.primaryColor },
+                ]}
+              >
+                {getTemperatureDisplay(weather.temperature)}
+              </Text>
+              <Text
+                style={[
+                  styles.compactCondition,
+                  { color: Colors.neutral[700] },
+                ]}
+              >
+                {weather.condition}
+              </Text>
+            </View>
 
-        <View style={styles.compactDetails}>
-          <View style={styles.compactDetailItem}>
-            <Ionicons name="water" size={14} color="#666" />
-            <Text style={styles.compactDetailText}>{weather.humidity}%</Text>
+            <View style={styles.compactDetails}>
+              <View style={styles.compactDetailItem}>
+                <Ionicons name="water" size={14} color={theme.secondaryColor} />
+                <Text
+                  style={[
+                    styles.compactDetailText,
+                    { color: Colors.neutral[700] },
+                  ]}
+                >
+                  {weather.humidity}%
+                </Text>
+              </View>
+              <View style={styles.compactDetailItem}>
+                <MaterialCommunityIcons
+                  name="weather-windy"
+                  size={14}
+                  color={theme.secondaryColor}
+                />
+                <Text
+                  style={[
+                    styles.compactDetailText,
+                    { color: Colors.neutral[700] },
+                  ]}
+                >
+                  {weather.windSpeed} km/h
+                </Text>
+              </View>
+            </View>
           </View>
-          <View style={styles.compactDetailItem}>
-            <Ionicons name="airplane" size={14} color="#666" />
-            <Text style={styles.compactDetailText}>
-              {weather.windSpeed} km/h
-            </Text>
-          </View>
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </Animated.View>
     );
   }
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.7}>
-      <View style={styles.header}>
-        <Text style={styles.cityName}>{weather.city}</Text>
-        <View style={styles.headerRight}>
-          <Ionicons
-            name={getWeatherIcon(weather.condition) as any}
-            size={32}
-            color={weatherColor}
-          />
-          <TouchableOpacity
-            style={styles.favoriteButton}
-            onPress={handleFavoritePress}
-            activeOpacity={0.7}
-          >
-            <Ionicons
-              name={isFavorite(weather.id) ? "star" : "star-outline"}
-              size={24}
-              color={isFavorite(weather.id) ? "#FFD700" : "#666"}
-            />
-          </TouchableOpacity>
-        </View>
-      </View>
+    <Animated.View
+      style={[
+        {
+          transform: [{ scale: scaleValue }],
+          opacity: fadeValue,
+        },
+      ]}
+    >
+      <TouchableOpacity
+        style={[
+          styles.card,
+          {
+            backgroundColor: theme.cardBackgroundColor,
+            shadowColor: theme.shadowColor,
+          },
+        ]}
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={0.9}
+        accessible={true}
+        accessibilityLabel={accessibilityLabel}
+        accessibilityHint={accessibilityHint}
+        accessibilityRole="button"
+      >
+        <WeatherCardGradient
+          condition={weather.condition}
+          style={styles.gradientOverlay}
+        />
+        <View style={styles.cardContent}>
+          <View style={styles.header}>
+            <Text style={[styles.cityName, { color: Colors.neutral[900] }]}>
+              {weather.city}
+            </Text>
+            <View style={styles.headerRight}>
+              <MaterialCommunityIcons
+                name={getWeatherIcon(weather.condition) as any}
+                size={32}
+                color={theme.iconColor}
+              />
+              <TouchableOpacity
+                style={styles.favoriteButton}
+                onPress={handleFavoritePress}
+                activeOpacity={0.7}
+                accessible={true}
+                accessibilityLabel={
+                  isFavorite(weather.id)
+                    ? `Remove ${weather.city} from favorites`
+                    : `Add ${weather.city} to favorites`
+                }
+                accessibilityRole="button"
+              >
+                <Ionicons
+                  name={isFavorite(weather.id) ? "star" : "star-outline"}
+                  size={24}
+                  color={
+                    isFavorite(weather.id) ? "#FFD700" : Colors.neutral[700]
+                  }
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
 
-      <View style={styles.temperatureContainer}>
-        <Text style={styles.temperature}>
-          {getTemperatureDisplay(weather.temperature)}
-        </Text>
-        <Text style={styles.condition}>{weather.condition}</Text>
-      </View>
+          <View style={styles.temperatureContainer}>
+            <Text style={[styles.temperature, { color: theme.primaryColor }]}>
+              {getTemperatureDisplay(weather.temperature)}
+            </Text>
+            <Text style={[styles.condition, { color: Colors.neutral[700] }]}>
+              {weather.condition}
+            </Text>
+          </View>
 
-      <View style={styles.details}>
-        <View style={styles.detailItem}>
-          <Ionicons name="water" size={16} color="#666" />
-          <Text style={styles.detailText}>{weather.humidity}%</Text>
+          <View style={styles.details}>
+            <View style={styles.detailItem}>
+              <Ionicons name="water" size={16} color={theme.secondaryColor} />
+              <Text style={[styles.detailText, { color: Colors.neutral[700] }]}>
+                {weather.humidity}%
+              </Text>
+            </View>
+            <View style={styles.detailItem}>
+              <MaterialCommunityIcons
+                name="weather-windy"
+                size={16}
+                color={theme.secondaryColor}
+              />
+              <Text style={[styles.detailText, { color: Colors.neutral[700] }]}>
+                {weather.windSpeed} km/h
+              </Text>
+            </View>
+          </View>
         </View>
-        <View style={styles.detailItem}>
-          <Ionicons name="airplane" size={16} color="#666" />
-          <Text style={styles.detailText}>{weather.windSpeed} km/h</Text>
-        </View>
-      </View>
-    </TouchableOpacity>
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: "white",
-    borderRadius: 16,
-    padding: 20,
-    marginVertical: 8,
-    marginHorizontal: Math.max(16, screenWidth * 0.04),
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-    minHeight: 160,
+    ...GlassMorphism.light,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.xl,
+    marginVertical: Spacing.md,
+    marginHorizontal: Spacing.responsive.base,
+    ...Shadows.lg,
+    minHeight: 180,
+    overflow: "hidden",
+    position: "relative",
+  },
+  gradientOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: BorderRadius.xl,
+    opacity: 0.1,
+  },
+  cardContent: {
+    position: "relative",
+    zIndex: 2,
+    flex: 1,
   },
   compactCard: {
-    backgroundColor: "white",
-    borderRadius: 12,
-    padding: 16,
-    marginVertical: 6,
-    marginHorizontal: Math.max(12, screenWidth * 0.03),
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 2.84,
-    elevation: 3,
-    minHeight: 120,
+    ...GlassMorphism.light,
+    borderRadius: BorderRadius.lg,
+    padding: Spacing.lg,
+    marginVertical: Spacing.sm,
+    marginHorizontal: Spacing.responsive.sm,
+    ...Shadows.md,
+    minHeight: 140,
+    overflow: "hidden",
+    position: "relative",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: Spacing.lg,
   },
   compactHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: Spacing.md,
   },
   headerRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: Spacing.md,
   },
   compactHeaderRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: Spacing.sm,
   },
   favoriteButton: {
-    padding: 4,
+    padding: Spacing.sm,
+    borderRadius: BorderRadius.full,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    ...Shadows.sm,
   },
   compactFavoriteButton: {
-    padding: 2,
+    padding: Spacing.xs,
+    borderRadius: BorderRadius.full,
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    ...Shadows.sm,
   },
   cityName: {
-    fontSize: Math.max(20, screenWidth * 0.05),
-    fontWeight: "600",
-    color: "#333",
+    fontSize: Typography.fontSize.xl,
+    fontWeight: Typography.fontWeight.semiBold,
+    color: Colors.neutral[900],
     flex: 1,
-    marginRight: 8,
+    marginRight: Spacing.sm,
+    letterSpacing: Typography.letterSpacing.tight,
   },
   compactCityName: {
-    fontSize: Math.max(16, screenWidth * 0.04),
-    fontWeight: "600",
-    color: "#333",
+    fontSize: Typography.fontSize.lg,
+    fontWeight: Typography.fontWeight.semiBold,
+    color: Colors.neutral[900],
     flex: 1,
-    marginRight: 8,
+    marginRight: Spacing.sm,
+    letterSpacing: Typography.letterSpacing.tight,
   },
   temperatureContainer: {
-    marginBottom: 16,
+    marginBottom: Spacing.lg,
+    alignItems: "flex-start",
   },
   compactTemperatureContainer: {
-    marginBottom: 12,
+    marginBottom: Spacing.md,
+    alignItems: "flex-start",
   },
   temperature: {
-    fontSize: Math.max(36, screenWidth * 0.09),
-    fontWeight: "700",
-    color: "#4A90E2",
-    marginBottom: 4,
+    fontSize: Typography.fontSize["4xl"],
+    fontWeight: Typography.fontWeight.bold,
+    marginBottom: Spacing.xs,
+    letterSpacing: Typography.letterSpacing.tight,
   },
   compactTemperature: {
-    fontSize: Math.max(28, screenWidth * 0.07),
-    fontWeight: "700",
-    color: "#4A90E2",
-    marginBottom: 4,
+    fontSize: Typography.fontSize["3xl"],
+    fontWeight: Typography.fontWeight.bold,
+    marginBottom: Spacing.xs,
+    letterSpacing: Typography.letterSpacing.tight,
   },
   condition: {
-    fontSize: Math.max(16, screenWidth * 0.04),
-    color: "#666",
+    fontSize: Typography.fontSize.base,
+    color: Colors.neutral[600],
+    fontWeight: Typography.fontWeight.medium,
   },
   compactCondition: {
-    fontSize: Math.max(14, screenWidth * 0.035),
-    color: "#666",
+    fontSize: Typography.fontSize.sm,
+    color: Colors.neutral[600],
+    fontWeight: Typography.fontWeight.medium,
   },
   details: {
     flexDirection: "row",
     justifyContent: "space-between",
+    paddingTop: Spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255, 255, 255, 0.2)",
   },
   compactDetails: {
     flexDirection: "row",
     justifyContent: "space-between",
+    paddingTop: Spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255, 255, 255, 0.2)",
   },
   detailItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
+    gap: Spacing.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.full,
   },
   compactDetailItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 4,
+    gap: Spacing.xs,
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
+    borderRadius: BorderRadius.full,
   },
   detailText: {
-    fontSize: Math.max(14, screenWidth * 0.035),
-    color: "#666",
+    fontSize: Typography.fontSize.sm,
+    color: Colors.neutral[700],
+    fontWeight: Typography.fontWeight.medium,
   },
   compactDetailText: {
-    fontSize: Math.max(12, screenWidth * 0.03),
-    color: "#666",
+    fontSize: Typography.fontSize.xs,
+    color: Colors.neutral[700],
+    fontWeight: Typography.fontWeight.medium,
   },
 });
