@@ -1,4 +1,5 @@
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { OfflineBanner } from "@/components/OfflineBanner";
 import { TemperatureToggle } from "@/components/TemperatureToggle";
 import { WeatherCard } from "@/components/WeatherCard";
 import { WeatherGradient } from "@/components/WeatherGradient";
@@ -14,6 +15,7 @@ import {
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { WeatherData } from "@/utils/api";
+import { isConnected } from "@/utils/networkAndCache";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useCallback, useState } from "react";
 import {
@@ -36,6 +38,13 @@ export default function FavoritesScreen() {
     useFavorites();
   const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+
+  // Check and monitor network connectivity
+  const checkConnectivity = useCallback(async () => {
+    const connected = await isConnected();
+    setIsOffline(!connected);
+  }, []);
 
   // Animation values
   const fadeValue = useState(new Animated.Value(0))[0];
@@ -50,6 +59,7 @@ export default function FavoritesScreen() {
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
+    await checkConnectivity();
     // Since favorites are stored locally, we just need to simulate a refresh
     setTimeout(() => {
       setRefreshing(false);
@@ -164,10 +174,16 @@ export default function FavoritesScreen() {
     return <LoadingSpinner message="Loading favorites..." />;
   }
 
+  // Initial connectivity check
+  React.useEffect(() => {
+    checkConnectivity();
+  }, []);
+
   return (
     <View
       style={[styles.container, { backgroundColor: colors.background.primary }]}
     >
+      <OfflineBanner visible={isOffline} />
       <WeatherGradient
         condition={favorites[0]?.condition || "partly cloudy"}
         intensity={0.2}

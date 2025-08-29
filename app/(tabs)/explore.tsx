@@ -1,3 +1,4 @@
+import { OfflineBanner } from "@/components/OfflineBanner";
 import { RecentSearches } from "@/components/RecentSearches";
 import { TemperatureToggle } from "@/components/TemperatureToggle";
 import { WeatherCard } from "@/components/WeatherCard";
@@ -14,6 +15,7 @@ import {
 import { useTheme } from "@/contexts/ThemeContext";
 import { useRecentSearches } from "@/hooks/useRecentSearches";
 import { fetchWeatherByCity, WeatherData } from "@/utils/api";
+import { isConnected } from "@/utils/networkAndCache";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { memo, useCallback, useMemo, useState } from "react";
 import {
@@ -23,6 +25,7 @@ import {
   Dimensions,
   KeyboardAvoidingView,
   Platform,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -69,7 +72,20 @@ export default function ExploreScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResult, setSearchResult] = useState<WeatherData | null>(null);
   const [searching, setSearching] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const { colors } = useTheme();
+
+  // Check and monitor network connectivity
+  const checkConnectivity = useCallback(async () => {
+    const connected = await isConnected();
+    setIsOffline(!connected);
+  }, []);
+
+  // Initial connectivity check
+  React.useEffect(() => {
+    checkConnectivity();
+  }, []);
 
   // Animation values
   const fadeValue = useState(new Animated.Value(0))[0];
@@ -104,6 +120,8 @@ export default function ExploreScreen() {
       Alert.alert("Error", "Please enter a city name");
       return;
     }
+
+    await checkConnectivity();
 
     try {
       setSearching(true);
@@ -151,10 +169,29 @@ export default function ExploreScreen() {
     }
   }, []);
 
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await checkConnectivity();
+
+    try {
+      if (searchResult) {
+        const result = await fetchWeatherByCity(searchResult.city);
+        if (result) {
+          setSearchResult(result);
+        }
+      }
+    } catch (error) {
+      console.error("Refresh error:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [searchResult]);
+
   // Handle recent search tap - reload weather data for that city
   const handleRecentSearchPress = useCallback(
     async (city: string) => {
       try {
+        await checkConnectivity();
         setSearching(true);
         setSearchResult(null);
         setSearchQuery(city);
@@ -200,6 +237,7 @@ export default function ExploreScreen() {
     <View
       style={[styles.container, { backgroundColor: colors.background.primary }]}
     >
+      <OfflineBanner visible={isOffline} />
       <WeatherGradient
         condition={searchResult?.condition || "partly cloudy"}
         intensity={0.2}
@@ -313,6 +351,14 @@ export default function ExploreScreen() {
                   style={styles.scrollView}
                   showsVerticalScrollIndicator={false}
                   contentContainerStyle={styles.scrollContent}
+                  refreshControl={
+                    <RefreshControl
+                      refreshing={refreshing}
+                      onRefresh={handleRefresh}
+                      colors={[Colors.primary[500]]}
+                      tintColor={colors.text.primary}
+                    />
+                  }
                 >
                   <View
                     style={[

@@ -1,5 +1,6 @@
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { OfflineBanner } from "@/components/OfflineBanner";
 import { TemperatureToggle } from "@/components/TemperatureToggle";
 import { WeatherCard } from "@/components/WeatherCard";
 import { WeatherGradient } from "@/components/WeatherGradient";
@@ -14,6 +15,7 @@ import {
 } from "@/constants/DesignSystem";
 import { useTheme } from "@/contexts/ThemeContext";
 import { fetchWeatherData, WeatherData } from "@/utils/api";
+import { isConnected } from "@/utils/networkAndCache";
 import { getAccessibleWeatherTheme } from "@/utils/weatherTheme";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useCallback, useEffect, useState } from "react";
@@ -36,7 +38,14 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentWeatherIndex, setCurrentWeatherIndex] = useState(0);
+  const [isOffline, setIsOffline] = useState(false);
   const { colors } = useTheme();
+
+  // Check and monitor network connectivity
+  const checkConnectivity = useCallback(async () => {
+    const connected = await isConnected();
+    setIsOffline(!connected);
+  }, []);
 
   // Enhanced animations
   const fadeValue = useState(new Animated.Value(1))[0];
@@ -53,6 +62,7 @@ export default function HomeScreen() {
     try {
       setLoading(true);
       setError(null);
+      await checkConnectivity();
       const data = await fetchWeatherData();
       setWeatherData(data);
 
@@ -164,6 +174,7 @@ export default function HomeScreen() {
     <View
       style={[styles.container, { backgroundColor: colors.background.primary }]}
     >
+      <OfflineBanner visible={isOffline} />
       <WeatherGradient
         condition={currentWeather?.condition || "partly cloudy"}
         intensity={0.3}
