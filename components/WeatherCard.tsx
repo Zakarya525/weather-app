@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useTemperature } from "../contexts/TemperatureContext";
 import { WeatherData } from "../utils/api";
 
 const { width: screenWidth } = Dimensions.get("window");
@@ -57,6 +58,7 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
   isCompact = false,
 }) => {
   const weatherColor = getWeatherColor(weather.condition);
+  const { getTemperatureDisplay } = useTemperature();
 
   if (isCompact) {
     return (
@@ -75,7 +77,9 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
         </View>
 
         <View style={styles.compactTemperatureContainer}>
-          <Text style={styles.compactTemperature}>{weather.temperature}°</Text>
+          <Text style={styles.compactTemperature}>
+            {getTemperatureDisplay(weather.temperature)}
+          </Text>
           <Text style={styles.compactCondition}>{weather.condition}</Text>
         </View>
 
@@ -107,7 +111,9 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
       </View>
 
       <View style={styles.temperatureContainer}>
-        <Text style={styles.temperature}>{weather.temperature}°</Text>
+        <Text style={styles.temperature}>
+          {getTemperatureDisplay(weather.temperature)}
+        </Text>
         <Text style={styles.condition}>{weather.condition}</Text>
       </View>
 

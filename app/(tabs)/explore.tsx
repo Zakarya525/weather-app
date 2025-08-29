@@ -1,4 +1,5 @@
 import { RecentSearches } from "@/components/RecentSearches";
+import { TemperatureToggle } from "@/components/TemperatureToggle";
 import { WeatherCard } from "@/components/WeatherCard";
 import { useRecentSearches } from "@/hooks/useRecentSearches";
 import { fetchWeatherByCity, WeatherData } from "@/utils/api";
@@ -171,7 +172,12 @@ export default function ExploreScreen() {
       >
         <View style={styles.mainContainer}>
           <View style={styles.header}>
-            <Ionicons name="search" size={iconSize} color="#4A90E2" />
+            <View style={styles.headerTop}>
+              <View style={styles.headerLeft}>
+                <Ionicons name="search" size={iconSize} color="#4A90E2" />
+              </View>
+              <TemperatureToggle style={styles.temperatureToggle} />
+            </View>
             <Text style={styles.title}>Weather Search</Text>
           </View>
 
@@ -281,7 +287,6 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   header: {
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: Math.max(20, screenHeight * 0.025),
@@ -289,11 +294,24 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
   },
+  headerTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+    paddingHorizontal: Math.max(20, screenWidth * 0.05),
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  temperatureToggle: {
+    marginRight: 0,
+  },
   title: {
     fontSize: Math.max(24, screenWidth * 0.06),
     fontWeight: "600",
     color: "#333",
-    marginLeft: 12,
+    marginTop: 12,
   },
   searchContainer: {
     padding: Math.max(20, screenWidth * 0.05),

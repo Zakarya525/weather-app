@@ -1,5 +1,6 @@
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { TemperatureToggle } from "@/components/TemperatureToggle";
 import { WeatherCard } from "@/components/WeatherCard";
 import { fetchWeatherData, WeatherData } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
@@ -95,11 +96,16 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Ionicons
-          name="partly-sunny"
-          size={Math.max(32, screenWidth * 0.08)}
-          color="#4A90E2"
-        />
+        <View style={styles.headerTop}>
+          <View style={styles.headerLeft}>
+            <Ionicons
+              name="partly-sunny"
+              size={Math.max(32, screenWidth * 0.08)}
+              color="#4A90E2"
+            />
+          </View>
+          <TemperatureToggle style={styles.temperatureToggle} />
+        </View>
         <Text style={styles.title}>Weather App</Text>
         <Text style={styles.subtitle}>
           {weatherData.length} cities available
@@ -137,6 +143,19 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
+  },
+  headerTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    width: "100%",
+    paddingHorizontal: Math.max(20, screenWidth * 0.05),
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  temperatureToggle: {
+    marginRight: 0,
   },
   title: {
     fontSize: Math.max(24, screenWidth * 0.06),
