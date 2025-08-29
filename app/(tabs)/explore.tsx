@@ -15,6 +15,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -94,105 +95,110 @@ export default function ExploreScreen() {
   }, []);
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-    >
-      <ScrollView
-        style={styles.scrollView}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
+    <SafeAreaView style={styles.container}>
+      <KeyboardAvoidingView
+        style={styles.container}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View style={styles.header}>
-          <Ionicons
-            name="search"
-            size={Math.max(32, screenWidth * 0.08)}
-            color="#4A90E2"
-          />
-          <Text style={styles.title}>Weather Search</Text>
-        </View>
-
-        <View style={styles.searchContainer}>
-          <View style={styles.searchInputContainer}>
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Enter city name..."
-              placeholderTextColor="#999"
-              value={searchQuery}
-              onChangeText={handleInputChange}
-              onSubmitEditing={handleSearch}
-              returnKeyType="search"
-              autoCapitalize="words"
-              autoCorrect={false}
+        <ScrollView
+          style={styles.scrollView}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+        >
+          <View style={styles.header}>
+            <Ionicons
+              name="search"
+              size={Math.max(32, screenWidth * 0.08)}
+              color="#4A90E2"
             />
-            <TouchableOpacity
-              style={[
-                styles.searchButton,
-                searching && styles.searchButtonDisabled,
-              ]}
-              onPress={handleSearch}
-              disabled={searching}
-            >
-              {searching ? (
-                <ActivityIndicator size="small" color="white" />
-              ) : (
-                <Ionicons name="search" size={20} color="white" />
-              )}
-            </TouchableOpacity>
+            <Text style={styles.title}>Weather Search</Text>
           </View>
 
-          {searchQuery.length > 0 && (
-            <TouchableOpacity style={styles.clearButton} onPress={clearSearch}>
-              <Text style={styles.clearButtonText}>Clear</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {recentSearches.length > 0 && !searchResult && (
-          <View style={styles.recentContainer}>
-            <Text style={styles.recentTitle}>Recent Searches</Text>
-            <View style={styles.recentList}>
-              {recentSearches.map((city, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.recentItem}
-                  onPress={() => handleRecentSearch(city)}
-                >
-                  <Ionicons name="time" size={16} color="#666" />
-                  <Text style={styles.recentText}>{city}</Text>
-                  <Ionicons name="chevron-forward" size={16} color="#999" />
-                </TouchableOpacity>
-              ))}
+          <View style={styles.searchContainer}>
+            <View style={styles.searchInputContainer}>
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Enter city name..."
+                placeholderTextColor="#999"
+                value={searchQuery}
+                onChangeText={handleInputChange}
+                onSubmitEditing={handleSearch}
+                returnKeyType="search"
+                autoCapitalize="words"
+                autoCorrect={false}
+              />
+              <TouchableOpacity
+                style={[
+                  styles.searchButton,
+                  searching && styles.searchButtonDisabled,
+                ]}
+                onPress={handleSearch}
+                disabled={searching}
+              >
+                {searching ? (
+                  <ActivityIndicator size="small" color="white" />
+                ) : (
+                  <Ionicons name="search" size={20} color="white" />
+                )}
+              </TouchableOpacity>
             </View>
-          </View>
-        )}
 
-        {searchResult && (
-          <View style={styles.resultContainer}>
-            <Text style={styles.resultTitle}>
-              Weather in {searchResult.city}
+            {searchQuery.length > 0 && (
+              <TouchableOpacity
+                style={styles.clearButton}
+                onPress={clearSearch}
+              >
+                <Text style={styles.clearButtonText}>Clear</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {recentSearches.length > 0 && !searchResult && (
+            <View style={styles.recentContainer}>
+              <Text style={styles.recentTitle}>Recent Searches</Text>
+              <View style={styles.recentList}>
+                {recentSearches.map((city, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    style={styles.recentItem}
+                    onPress={() => handleRecentSearch(city)}
+                  >
+                    <Ionicons name="time" size={16} color="#666" />
+                    <Text style={styles.recentText}>{city}</Text>
+                    <Ionicons name="chevron-forward" size={16} color="#999" />
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {searchResult && (
+            <View style={styles.resultContainer}>
+              <Text style={styles.resultTitle}>
+                Weather in {searchResult.city}
+              </Text>
+
+              <WeatherCard
+                weather={searchResult}
+                onPress={() => handleCityPress(searchResult.city)}
+                isCompact={false}
+              />
+            </View>
+          )}
+
+          <View style={styles.infoContainer}>
+            <Text style={styles.infoTitle}>Available Cities</Text>
+            <Text style={styles.infoText}>
+              New York, London, Dubai, Tokyo, Paris, Sydney, Mumbai, Cairo,
+              Toronto, Berlin
             </Text>
-
-            <WeatherCard
-              weather={searchResult}
-              onPress={() => handleCityPress(searchResult.city)}
-              isCompact={false}
-            />
+            <Text style={styles.infoSubtext}>
+              Try searching for any of these cities to see their current weather
+            </Text>
           </View>
-        )}
-
-        <View style={styles.infoContainer}>
-          <Text style={styles.infoTitle}>Available Cities</Text>
-          <Text style={styles.infoText}>
-            New York, London, Dubai, Tokyo, Paris, Sydney, Mumbai, Cairo,
-            Toronto, Berlin
-          </Text>
-          <Text style={styles.infoSubtext}>
-            Try searching for any of these cities to see their current weather
-          </Text>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

@@ -12,6 +12,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -92,7 +93,7 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Ionicons
           name="partly-sunny"
@@ -120,7 +121,7 @@ export default function HomeScreen() {
         windowSize={10}
         removeClippedSubviews={true}
       />
-    </View>
+    </SafeAreaView>
   );
 }
 
