@@ -1,7 +1,9 @@
+import { RecentSearches } from "@/components/RecentSearches";
 import { WeatherCard } from "@/components/WeatherCard";
+import { useRecentSearches } from "@/hooks/useRecentSearches";
 import { fetchWeatherByCity, WeatherData } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
-import { useCallback, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -19,16 +21,50 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
+// Memoized search button component for better performance
+const SearchButton = memo<{
+  searching: boolean;
+  onPress: () => void;
+}>(({ searching, onPress }) => (
+  <TouchableOpacity
+    style={[styles.searchButton, searching && styles.searchButtonDisabled]}
+    onPress={onPress}
+    disabled={searching}
+  >
+    {searching ? (
+      <ActivityIndicator size="small" color="white" />
+    ) : (
+      <Ionicons name="search" size={20} color="white" />
+    )}
+  </TouchableOpacity>
+));
+
+SearchButton.displayName = "SearchButton";
+
+// Memoized clear button component
+const ClearButton = memo<{
+  onPress: () => void;
+}>(({ onPress }) => (
+  <TouchableOpacity style={styles.clearButton} onPress={onPress}>
+    <Text style={styles.clearButtonText}>Clear</Text>
+  </TouchableOpacity>
+));
+
+ClearButton.displayName = "ClearButton";
+
 export default function ExploreScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResult, setSearchResult] = useState<WeatherData | null>(null);
   const [searching, setSearching] = useState(false);
-  const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
-  // Helper function to capitalize first letter
-  const capitalizeFirstLetter = (str: string): string => {
-    return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-  };
+  // Recent searches hook
+  const {
+    recentSearches,
+    loading: recentSearchesLoading,
+    addRecentSearch,
+    removeRecentSearch,
+    clearRecentSearches,
+  } = useRecentSearches();
 
   const handleSearch = useCallback(async () => {
     if (!searchQuery.trim()) {
@@ -47,10 +83,7 @@ export default function ExploreScreen() {
         // Update search query to show normalized city name
         setSearchQuery(result.city);
         // Add to recent searches
-        setRecentSearches((prev) => {
-          const filtered = prev.filter((city) => city !== result.city);
-          return [result.city, ...filtered].slice(0, 5);
-        });
+        await addRecentSearch(result.city);
       } else {
         Alert.alert(
           "Not Found",
@@ -72,15 +105,6 @@ export default function ExploreScreen() {
     setSearchResult(null);
   }, []);
 
-  const handleRecentSearch = useCallback(
-    (city: string) => {
-      setSearchQuery(city);
-      // Auto-search when tapping recent search
-      setTimeout(() => handleSearch(), 100);
-    },
-    [handleSearch]
-  );
-
   const handleCityPress = useCallback((city: string) => {
     Alert.alert("City Selected", `You selected ${city}`);
   }, []);
@@ -94,23 +118,60 @@ export default function ExploreScreen() {
     }
   }, []);
 
+  // Handle recent search tap - reload weather data for that city
+  const handleRecentSearchPress = useCallback(
+    async (city: string) => {
+      try {
+        setSearching(true);
+        setSearchResult(null);
+        setSearchQuery(city);
+
+        const result = await fetchWeatherByCity(city);
+
+        if (result) {
+          setSearchResult(result);
+          // Update recent search timestamp
+          await addRecentSearch(result.city);
+        } else {
+          Alert.alert(
+            "Not Found",
+            `Weather data not found for "${city}". The city might no longer be available.`
+          );
+        }
+      } catch (error) {
+        console.error("Recent search error:", error);
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error occurred";
+        Alert.alert("Search Failed", errorMessage);
+      } finally {
+        setSearching(false);
+      }
+    },
+    [addRecentSearch]
+  );
+
+  // Memoized values for performance optimization
+  const hasSearchQuery = useMemo(() => searchQuery.length > 0, [searchQuery]);
+  const shouldShowRecentSearches = useMemo(
+    () => !searchResult && !recentSearchesLoading,
+    [searchResult, recentSearchesLoading]
+  );
+
+  // Memoized icon size calculations
+  const iconSize = useMemo(
+    () => Math.max(32, screenWidth * 0.08),
+    [screenWidth]
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <ScrollView
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollContent}
-        >
+        <View style={styles.mainContainer}>
           <View style={styles.header}>
-            <Ionicons
-              name="search"
-              size={Math.max(32, screenWidth * 0.08)}
-              color="#4A90E2"
-            />
+            <Ionicons name="search" size={iconSize} color="#4A90E2" />
             <Text style={styles.title}>Weather Search</Text>
           </View>
 
@@ -127,76 +188,76 @@ export default function ExploreScreen() {
                 autoCapitalize="words"
                 autoCorrect={false}
               />
-              <TouchableOpacity
-                style={[
-                  styles.searchButton,
-                  searching && styles.searchButtonDisabled,
-                ]}
-                onPress={handleSearch}
-                disabled={searching}
-              >
-                {searching ? (
-                  <ActivityIndicator size="small" color="white" />
-                ) : (
-                  <Ionicons name="search" size={20} color="white" />
-                )}
-              </TouchableOpacity>
+              <SearchButton searching={searching} onPress={handleSearch} />
             </View>
 
-            {searchQuery.length > 0 && (
-              <TouchableOpacity
-                style={styles.clearButton}
-                onPress={clearSearch}
+            {hasSearchQuery && <ClearButton onPress={clearSearch} />}
+          </View>
+
+          <View style={styles.contentContainer}>
+            {/* Recent Searches - shown when no search result */}
+            {shouldShowRecentSearches && (
+              <RecentSearches
+                recentSearches={recentSearches}
+                onSearchPress={handleRecentSearchPress}
+                onClearAll={clearRecentSearches}
+                onRemoveSearch={removeRecentSearch}
+              />
+            )}
+
+            {searchResult && (
+              <ScrollView
+                style={styles.scrollView}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
               >
-                <Text style={styles.clearButtonText}>Clear</Text>
-              </TouchableOpacity>
+                <View style={styles.resultContainer}>
+                  <Text style={styles.resultTitle}>
+                    Weather in {searchResult.city}
+                  </Text>
+
+                  <WeatherCard
+                    weather={searchResult}
+                    onPress={() => handleCityPress(searchResult.city)}
+                    isCompact={false}
+                  />
+                </View>
+
+                <View style={styles.infoContainer}>
+                  <Text style={styles.infoTitle}>Available Cities</Text>
+                  <Text style={styles.infoText}>
+                    New York, London, Dubai, Tokyo, Paris, Sydney, Mumbai,
+                    Cairo, Toronto, Berlin
+                  </Text>
+                  <Text style={styles.infoSubtext}>
+                    Try searching for any of these cities to see their current
+                    weather
+                  </Text>
+                </View>
+              </ScrollView>
+            )}
+
+            {!searchResult && !shouldShowRecentSearches && (
+              <ScrollView
+                style={styles.scrollView}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+              >
+                <View style={styles.infoContainer}>
+                  <Text style={styles.infoTitle}>Available Cities</Text>
+                  <Text style={styles.infoText}>
+                    New York, London, Dubai, Tokyo, Paris, Sydney, Mumbai,
+                    Cairo, Toronto, Berlin
+                  </Text>
+                  <Text style={styles.infoSubtext}>
+                    Try searching for any of these cities to see their current
+                    weather
+                  </Text>
+                </View>
+              </ScrollView>
             )}
           </View>
-
-          {recentSearches.length > 0 && !searchResult && (
-            <View style={styles.recentContainer}>
-              <Text style={styles.recentTitle}>Recent Searches</Text>
-              <View style={styles.recentList}>
-                {recentSearches.map((city, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    style={styles.recentItem}
-                    onPress={() => handleRecentSearch(city)}
-                  >
-                    <Ionicons name="time" size={16} color="#666" />
-                    <Text style={styles.recentText}>{city}</Text>
-                    <Ionicons name="chevron-forward" size={16} color="#999" />
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {searchResult && (
-            <View style={styles.resultContainer}>
-              <Text style={styles.resultTitle}>
-                Weather in {searchResult.city}
-              </Text>
-
-              <WeatherCard
-                weather={searchResult}
-                onPress={() => handleCityPress(searchResult.city)}
-                isCompact={false}
-              />
-            </View>
-          )}
-
-          <View style={styles.infoContainer}>
-            <Text style={styles.infoTitle}>Available Cities</Text>
-            <Text style={styles.infoText}>
-              New York, London, Dubai, Tokyo, Paris, Sydney, Mumbai, Cairo,
-              Toronto, Berlin
-            </Text>
-            <Text style={styles.infoSubtext}>
-              Try searching for any of these cities to see their current weather
-            </Text>
-          </View>
-        </ScrollView>
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -206,6 +267,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F5F5F5",
+  },
+  mainContainer: {
+    flex: 1,
+  },
+  contentContainer: {
+    flex: 1,
   },
   scrollView: {
     flex: 1,
