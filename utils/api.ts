@@ -1,3 +1,5 @@
+import { Platform } from "react-native";
+
 export interface WeatherData {
   id: number;
   city: string;
@@ -8,10 +10,26 @@ export interface WeatherData {
   icon: string;
 }
 
-const API_BASE_URL = "http://localhost:3001";
+// Use different URLs for different platforms
+const getApiBaseUrl = () => {
+  if (Platform.OS === "web") {
+    return "http://localhost:3001";
+  } else {
+    // For mobile devices, use your computer's IP address
+    return "http://192.168.1.12:3001";
+  }
+};
+
+const API_BASE_URL = getApiBaseUrl();
+
+// Helper function to capitalize first letter
+const capitalizeFirstLetter = (str: string): string => {
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+};
 
 export const fetchWeatherData = async (): Promise<WeatherData[]> => {
   try {
+    console.log("Fetching from:", `${API_BASE_URL}/weather`);
     const response = await fetch(`${API_BASE_URL}/weather`);
 
     if (!response.ok) {
@@ -32,8 +50,12 @@ export const fetchWeatherByCity = async (
   cityName: string
 ): Promise<WeatherData | null> => {
   try {
+    // Normalize city name: capitalize first letter, lowercase the rest
+    const normalizedCityName = capitalizeFirstLetter(cityName.trim());
+    console.log("Searching for:", normalizedCityName);
+
     const response = await fetch(
-      `${API_BASE_URL}/weather?city=${encodeURIComponent(cityName)}`
+      `${API_BASE_URL}/weather?city=${encodeURIComponent(normalizedCityName)}`
     );
 
     if (!response.ok) {

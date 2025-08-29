@@ -1,9 +1,11 @@
+import { ErrorMessage } from "@/components/ErrorMessage";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { WeatherCard } from "@/components/WeatherCard";
 import { fetchWeatherData, WeatherData } from "@/utils/api";
 import { Ionicons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-  Alert,
+  Dimensions,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -11,71 +13,112 @@ import {
   View,
 } from "react-native";
 
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
+
 export default function HomeScreen() {
   const [weatherData, setWeatherData] = useState<WeatherData[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const loadWeatherData = async () => {
+  const loadWeatherData = useCallback(async () => {
     try {
       setLoading(true);
+      setError(null);
       const data = await fetchWeatherData();
       setWeatherData(data);
     } catch (error) {
-      Alert.alert(
-        "Error",
-        "Failed to load weather data. Please check your connection."
-      );
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to load weather data";
+      setError(errorMessage);
       console.error("Error loading weather data:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await loadWeatherData();
     setRefreshing(false);
-  };
+  }, [loadWeatherData]);
 
   useEffect(() => {
     loadWeatherData();
+  }, [loadWeatherData]);
+
+  const handleCityPress = useCallback((city: string) => {
+    // You can navigate to a detailed view here
+    console.log(`City selected: ${city}`);
   }, []);
 
-  const handleCityPress = (city: string) => {
-    Alert.alert("City Selected", `You selected ${city}`);
-  };
+  const renderWeatherCard = useCallback(
+    ({ item }: { item: WeatherData }) => (
+      <WeatherCard
+        weather={item}
+        onPress={() => handleCityPress(item.city)}
+        isCompact={screenWidth < 400}
+      />
+    ),
+    [handleCityPress]
+  );
+
+  const renderEmptyState = useCallback(
+    () => (
+      <View style={styles.emptyContainer}>
+        <Ionicons name="cloud-offline" size={64} color="#CCC" />
+        <Text style={styles.emptyTitle}>No Weather Data</Text>
+        <Text style={styles.emptyText}>
+          Pull down to refresh or check your connection
+        </Text>
+      </View>
+    ),
+    []
+  );
 
   if (loading) {
+    return <LoadingSpinner message="Loading weather data..." />;
+  }
+
+  if (error) {
     return (
-      <View style={styles.loadingContainer}>
-        <Ionicons name="cloud" size={64} color="#4A90E2" />
-        <Text style={styles.loadingText}>Loading weather data...</Text>
-      </View>
+      <ErrorMessage
+        title="Failed to Load Weather"
+        message={error}
+        onRetry={loadWeatherData}
+        retryText="Retry"
+      />
     );
   }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Ionicons name="partly-sunny" size={32} color="#4A90E2" />
+        <Ionicons
+          name="partly-sunny"
+          size={Math.max(32, screenWidth * 0.08)}
+          color="#4A90E2"
+        />
         <Text style={styles.title}>Weather App</Text>
+        <Text style={styles.subtitle}>
+          {weatherData.length} cities available
+        </Text>
       </View>
 
       <FlatList
         data={weatherData}
         keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <WeatherCard
-            weather={item}
-            onPress={() => handleCityPress(item.city)}
-          />
-        )}
+        renderItem={renderWeatherCard}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.listContainer}
+        ListEmptyComponent={renderEmptyState}
+        initialNumToRender={5}
+        maxToRenderPerBatch={10}
+        windowSize={10}
+        removeClippedSubviews={true}
       />
     </View>
   );
@@ -87,32 +130,46 @@ const styles = StyleSheet.create({
     backgroundColor: "#F5F5F5",
   },
   header: {
-    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 20,
+    paddingVertical: Math.max(20, screenHeight * 0.025),
     backgroundColor: "white",
     borderBottomWidth: 1,
     borderBottomColor: "#E0E0E0",
   },
   title: {
-    fontSize: 24,
+    fontSize: Math.max(24, screenWidth * 0.06),
     fontWeight: "600",
     color: "#333",
-    marginLeft: 12,
+    marginTop: 12,
+    marginBottom: 4,
+  },
+  subtitle: {
+    fontSize: Math.max(14, screenWidth * 0.035),
+    color: "#666",
+    fontWeight: "400",
   },
   listContainer: {
-    paddingVertical: 16,
+    paddingVertical: Math.max(16, screenHeight * 0.02),
+    paddingBottom: Math.max(20, screenHeight * 0.025),
   },
-  loadingContainer: {
+  emptyContainer: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#F5F5F5",
+    paddingVertical: Math.max(40, screenHeight * 0.05),
   },
-  loadingText: {
-    fontSize: 18,
+  emptyTitle: {
+    fontSize: Math.max(20, screenWidth * 0.05),
+    fontWeight: "600",
     color: "#666",
     marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyText: {
+    fontSize: Math.max(14, screenWidth * 0.035),
+    color: "#999",
+    textAlign: "center",
+    paddingHorizontal: Math.max(20, screenWidth * 0.05),
   },
 });
