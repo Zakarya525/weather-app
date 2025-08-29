@@ -12,6 +12,7 @@ import {
   Typography,
 } from "@/constants/DesignSystem";
 import { useFavorites } from "@/contexts/FavoritesContext";
+import { useTheme } from "@/contexts/ThemeContext";
 import { WeatherData } from "@/utils/api";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useCallback, useState } from "react";
@@ -33,6 +34,7 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 export default function FavoritesScreen() {
   const { favorites, loading, removeFromFavorites, clearAllFavorites } =
     useFavorites();
+  const { colors } = useTheme();
   const [refreshing, setRefreshing] = useState(false);
 
   // Animation values
@@ -116,24 +118,30 @@ export default function FavoritesScreen() {
   const renderEmptyState = useCallback(
     () => (
       <View style={styles.emptyContainer}>
-        <Ionicons name="heart-outline" size={80} color="#CCC" />
-        <Text style={styles.emptyTitle}>No Favorites Yet</Text>
-        <Text style={styles.emptyText}>
+        <Ionicons
+          name="heart-outline"
+          size={80}
+          color={colors.icon.secondary}
+        />
+        <Text style={[styles.emptyTitle, { color: colors.text.secondary }]}>
+          No Favorites Yet
+        </Text>
+        <Text style={[styles.emptyText, { color: colors.text.tertiary }]}>
           Add cities to your favorites by tapping the heart icon on weather
           cards
         </Text>
-        <Text style={styles.emptySubtext}>
+        <Text style={[styles.emptySubtext, { color: colors.text.tertiary }]}>
           Go to the Weather or Search tabs to find cities to favorite
         </Text>
       </View>
     ),
-    []
+    [colors]
   );
 
   const renderHeader = useCallback(
     () => (
       <View style={styles.listHeader}>
-        <Text style={styles.favoritesCount}>
+        <Text style={[styles.favoritesCount, { color: colors.text.primary }]}>
           {favorites.length} {favorites.length === 1 ? "city" : "cities"} in
           favorites
         </Text>
@@ -149,7 +157,7 @@ export default function FavoritesScreen() {
         )}
       </View>
     ),
-    [favorites.length, handleClearAllFavorites]
+    [favorites.length, handleClearAllFavorites, colors]
   );
 
   if (loading) {
@@ -157,7 +165,9 @@ export default function FavoritesScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[styles.container, { backgroundColor: colors.background.primary }]}
+    >
       <WeatherGradient
         condition={favorites[0]?.condition || "partly cloudy"}
         intensity={0.2}
@@ -167,7 +177,15 @@ export default function FavoritesScreen() {
         <Animated.View
           style={[styles.contentContainer, { opacity: fadeValue }]}
         >
-          <View style={styles.header}>
+          <View
+            style={[
+              styles.header,
+              {
+                backgroundColor: colors.background.card,
+                borderColor: colors.border.primary,
+              },
+            ]}
+          >
             <View style={styles.headerTop}>
               <View style={styles.headerLeft}>
                 <MaterialCommunityIcons
@@ -178,8 +196,10 @@ export default function FavoritesScreen() {
               </View>
               <TemperatureToggle style={styles.temperatureToggle} />
             </View>
-            <Text style={styles.title}>Favorite Cities</Text>
-            <Text style={styles.subtitle}>
+            <Text style={[styles.title, { color: colors.text.primary }]}>
+              Favorite Cities
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
               Your personalized weather collection
             </Text>
           </View>
@@ -249,6 +269,7 @@ const styles = StyleSheet.create({
   headerLeft: {
     flex: 1,
   },
+
   temperatureToggle: {
     marginRight: 0,
   },

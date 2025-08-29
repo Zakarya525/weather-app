@@ -20,6 +20,7 @@ import {
 } from "../constants/DesignSystem";
 import { useFavorites } from "../contexts/FavoritesContext";
 import { useTemperature } from "../contexts/TemperatureContext";
+import { useTheme } from "../contexts/ThemeContext";
 import {
   getWeatherCardAccessibilityHint,
   getWeatherDescription,
@@ -53,6 +54,7 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
   const theme = getAccessibleWeatherTheme(weather.condition);
   const { getTemperatureDisplay } = useTemperature();
   const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites();
+  const { colors, shadows } = useTheme();
 
   // Enhanced animations
   const scaleValue = React.useRef(new Animated.Value(1)).current;
@@ -155,8 +157,9 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
           style={[
             styles.compactCard,
             {
-              backgroundColor: theme.cardBackgroundColor,
-              shadowColor: theme.shadowColor,
+              backgroundColor: colors.background.card,
+              shadowColor: shadows.shadowColor,
+              borderColor: colors.border.primary,
             },
           ]}
           onPress={onPress}
@@ -175,7 +178,7 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
           <View style={styles.cardContent}>
             <View style={styles.compactHeader}>
               <Text
-                style={[styles.compactCityName, { color: Colors.neutral[900] }]}
+                style={[styles.compactCityName, { color: colors.text.primary }]}
               >
                 {weather.city}
               </Text>
@@ -201,7 +204,7 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
                     name={isFavorite(weather.id) ? "star" : "star-outline"}
                     size={20}
                     color={
-                      isFavorite(weather.id) ? "#FFD700" : Colors.neutral[700]
+                      isFavorite(weather.id) ? "#FFD700" : colors.icon.secondary
                     }
                   />
                 </TouchableOpacity>
@@ -220,7 +223,7 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
               <Text
                 style={[
                   styles.compactCondition,
-                  { color: Colors.neutral[700] },
+                  { color: colors.text.secondary },
                 ]}
               >
                 {weather.condition}
@@ -233,7 +236,7 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
                 <Text
                   style={[
                     styles.compactDetailText,
-                    { color: Colors.neutral[700] },
+                    { color: colors.text.secondary },
                   ]}
                 >
                   {weather.humidity}%
@@ -248,7 +251,7 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
                 <Text
                   style={[
                     styles.compactDetailText,
-                    { color: Colors.neutral[700] },
+                    { color: colors.text.secondary },
                   ]}
                 >
                   {weather.windSpeed} km/h
@@ -274,8 +277,9 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
         style={[
           styles.card,
           {
-            backgroundColor: theme.cardBackgroundColor,
-            shadowColor: theme.shadowColor,
+            backgroundColor: colors.background.card,
+            shadowColor: shadows.shadowColor,
+            borderColor: colors.border.primary,
           },
         ]}
         onPress={onPress}
@@ -293,7 +297,7 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
         />
         <View style={styles.cardContent}>
           <View style={styles.header}>
-            <Text style={[styles.cityName, { color: Colors.neutral[900] }]}>
+            <Text style={[styles.cityName, { color: colors.text.primary }]}>
               {weather.city}
             </Text>
             <View style={styles.headerRight}>
@@ -318,7 +322,7 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
                   name={isFavorite(weather.id) ? "star" : "star-outline"}
                   size={24}
                   color={
-                    isFavorite(weather.id) ? "#FFD700" : Colors.neutral[700]
+                    isFavorite(weather.id) ? "#FFD700" : colors.icon.secondary
                   }
                 />
               </TouchableOpacity>
@@ -329,7 +333,7 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
             <Text style={[styles.temperature, { color: theme.primaryColor }]}>
               {getTemperatureDisplay(weather.temperature)}
             </Text>
-            <Text style={[styles.condition, { color: Colors.neutral[700] }]}>
+            <Text style={[styles.condition, { color: colors.text.secondary }]}>
               {weather.condition}
             </Text>
           </View>
@@ -337,7 +341,9 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
           <View style={styles.details}>
             <View style={styles.detailItem}>
               <Ionicons name="water" size={16} color={theme.secondaryColor} />
-              <Text style={[styles.detailText, { color: Colors.neutral[700] }]}>
+              <Text
+                style={[styles.detailText, { color: colors.text.secondary }]}
+              >
                 {weather.humidity}%
               </Text>
             </View>
@@ -347,7 +353,9 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
                 size={16}
                 color={theme.secondaryColor}
               />
-              <Text style={[styles.detailText, { color: Colors.neutral[700] }]}>
+              <Text
+                style={[styles.detailText, { color: colors.text.secondary }]}
+              >
                 {weather.windSpeed} km/h
               </Text>
             </View>

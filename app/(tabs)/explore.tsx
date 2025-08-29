@@ -11,6 +11,7 @@ import {
   Spacing,
   Typography,
 } from "@/constants/DesignSystem";
+import { useTheme } from "@/contexts/ThemeContext";
 import { useRecentSearches } from "@/hooks/useRecentSearches";
 import { fetchWeatherByCity, WeatherData } from "@/utils/api";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -68,6 +69,7 @@ export default function ExploreScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResult, setSearchResult] = useState<WeatherData | null>(null);
   const [searching, setSearching] = useState(false);
+  const { colors } = useTheme();
 
   // Animation values
   const fadeValue = useState(new Animated.Value(0))[0];
@@ -195,7 +197,9 @@ export default function ExploreScreen() {
   );
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[styles.container, { backgroundColor: colors.background.primary }]}
+    >
       <WeatherGradient
         condition={searchResult?.condition || "partly cloudy"}
         intensity={0.2}
@@ -215,7 +219,15 @@ export default function ExploreScreen() {
               },
             ]}
           >
-            <View style={styles.header}>
+            <View
+              style={[
+                styles.header,
+                {
+                  backgroundColor: colors.background.card,
+                  borderColor: colors.border.primary,
+                },
+              ]}
+            >
               <View style={styles.headerTop}>
                 <View style={styles.headerLeft}>
                   <MaterialCommunityIcons
@@ -226,15 +238,32 @@ export default function ExploreScreen() {
                 </View>
                 <TemperatureToggle style={styles.temperatureToggle} />
               </View>
-              <Text style={styles.title}>Weather Search</Text>
+              <Text style={[styles.title, { color: colors.text.primary }]}>
+                Weather Search
+              </Text>
             </View>
 
-            <View style={styles.searchContainer}>
+            <View
+              style={[
+                styles.searchContainer,
+                {
+                  backgroundColor: colors.background.card,
+                  borderColor: colors.border.primary,
+                },
+              ]}
+            >
               <View style={styles.searchInputContainer}>
                 <TextInput
-                  style={styles.searchInput}
+                  style={[
+                    styles.searchInput,
+                    {
+                      backgroundColor: colors.background.secondary,
+                      borderColor: colors.border.primary,
+                      color: colors.text.primary,
+                    },
+                  ]}
                   placeholder="Enter city name..."
-                  placeholderTextColor="#999"
+                  placeholderTextColor={colors.text.tertiary}
                   value={searchQuery}
                   onChangeText={handleInputChange}
                   onSubmitEditing={handleSearch}
@@ -245,7 +274,27 @@ export default function ExploreScreen() {
                 <SearchButton searching={searching} onPress={handleSearch} />
               </View>
 
-              {hasSearchQuery && <ClearButton onPress={clearSearch} />}
+              {hasSearchQuery && (
+                <TouchableOpacity
+                  style={[
+                    styles.clearButton,
+                    {
+                      backgroundColor: colors.background.secondary,
+                      borderColor: colors.border.primary,
+                    },
+                  ]}
+                  onPress={clearSearch}
+                >
+                  <Text
+                    style={[
+                      styles.clearButtonText,
+                      { color: colors.text.secondary },
+                    ]}
+                  >
+                    Clear
+                  </Text>
+                </TouchableOpacity>
+              )}
             </View>
 
             <View style={styles.contentContainer}>
@@ -265,8 +314,21 @@ export default function ExploreScreen() {
                   showsVerticalScrollIndicator={false}
                   contentContainerStyle={styles.scrollContent}
                 >
-                  <View style={styles.resultContainer}>
-                    <Text style={styles.resultTitle}>
+                  <View
+                    style={[
+                      styles.resultContainer,
+                      {
+                        backgroundColor: colors.background.card,
+                        borderColor: colors.border.primary,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.resultTitle,
+                        { color: colors.text.primary },
+                      ]}
+                    >
                       Weather in {searchResult.city}
                     </Text>
 
@@ -277,13 +339,35 @@ export default function ExploreScreen() {
                     />
                   </View>
 
-                  <View style={styles.infoContainer}>
-                    <Text style={styles.infoTitle}>Available Cities</Text>
-                    <Text style={styles.infoText}>
+                  <View
+                    style={[
+                      styles.infoContainer,
+                      {
+                        backgroundColor: colors.background.card,
+                        borderColor: colors.border.primary,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[styles.infoTitle, { color: colors.text.primary }]}
+                    >
+                      Available Cities
+                    </Text>
+                    <Text
+                      style={[
+                        styles.infoText,
+                        { color: colors.text.secondary },
+                      ]}
+                    >
                       New York, London, Dubai, Tokyo, Paris, Sydney, Mumbai,
                       Cairo, Toronto, Berlin
                     </Text>
-                    <Text style={styles.infoSubtext}>
+                    <Text
+                      style={[
+                        styles.infoSubtext,
+                        { color: colors.text.tertiary },
+                      ]}
+                    >
                       Try searching for any of these cities to see their current
                       weather
                     </Text>
@@ -297,13 +381,35 @@ export default function ExploreScreen() {
                   showsVerticalScrollIndicator={false}
                   contentContainerStyle={styles.scrollContent}
                 >
-                  <View style={styles.infoContainer}>
-                    <Text style={styles.infoTitle}>Available Cities</Text>
-                    <Text style={styles.infoText}>
+                  <View
+                    style={[
+                      styles.infoContainer,
+                      {
+                        backgroundColor: colors.background.card,
+                        borderColor: colors.border.primary,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={[styles.infoTitle, { color: colors.text.primary }]}
+                    >
+                      Available Cities
+                    </Text>
+                    <Text
+                      style={[
+                        styles.infoText,
+                        { color: colors.text.secondary },
+                      ]}
+                    >
                       New York, London, Dubai, Tokyo, Paris, Sydney, Mumbai,
                       Cairo, Toronto, Berlin
                     </Text>
-                    <Text style={styles.infoSubtext}>
+                    <Text
+                      style={[
+                        styles.infoSubtext,
+                        { color: colors.text.tertiary },
+                      ]}
+                    >
                       Try searching for any of these cities to see their current
                       weather
                     </Text>
@@ -349,7 +455,6 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.responsive.lg,
   },
   header: {
-    ...GlassMorphism.light,
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: Spacing.responsive.lg,
@@ -357,7 +462,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.responsive.base,
     borderRadius: BorderRadius.xl,
     ...Shadows.md,
-    borderWidth: 0,
+    borderWidth: 1,
   },
   headerTop: {
     flexDirection: "row",
@@ -369,6 +474,7 @@ const styles = StyleSheet.create({
   headerLeft: {
     flex: 1,
   },
+
   temperatureToggle: {
     marginRight: 0,
   },
@@ -380,12 +486,11 @@ const styles = StyleSheet.create({
     letterSpacing: Typography.letterSpacing.tight,
   },
   searchContainer: {
-    ...GlassMorphism.light,
     padding: Spacing.responsive.lg,
     margin: Spacing.responsive.base,
     borderRadius: BorderRadius.xl,
     ...Shadows.lg,
-    borderWidth: 0,
+    borderWidth: 1,
   },
   searchInputContainer: {
     flexDirection: "row",
@@ -394,14 +499,11 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     height: 50,
-    backgroundColor: Colors.neutral[0],
     borderWidth: 2,
-    borderColor: Colors.neutral[200],
     borderRadius: BorderRadius.md,
     paddingHorizontal: Spacing.lg,
     fontSize: Typography.fontSize.base,
     marginRight: Spacing.md,
-    color: Colors.neutral[900],
     ...Shadows.sm,
   },
   searchButton: {
@@ -421,11 +523,10 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     paddingVertical: Spacing.sm,
     paddingHorizontal: Spacing.lg,
-    backgroundColor: Colors.neutral[100],
     borderRadius: BorderRadius.full,
+    borderWidth: 1,
   },
   clearButtonText: {
-    color: Colors.neutral[600],
     fontSize: Typography.fontSize.sm,
     fontWeight: Typography.fontWeight.medium,
   },
@@ -463,12 +564,11 @@ const styles = StyleSheet.create({
     fontWeight: Typography.fontWeight.medium,
   },
   resultContainer: {
-    ...GlassMorphism.light,
     margin: Spacing.responsive.base,
     borderRadius: BorderRadius.xl,
     padding: Spacing.responsive.lg,
     ...Shadows.lg,
-    borderWidth: 0,
+    borderWidth: 1,
   },
   resultTitle: {
     fontSize: Typography.fontSize.xl,
@@ -479,12 +579,11 @@ const styles = StyleSheet.create({
     letterSpacing: Typography.letterSpacing.tight,
   },
   infoContainer: {
-    ...GlassMorphism.light,
     margin: Spacing.responsive.base,
     borderRadius: BorderRadius.xl,
     padding: Spacing.responsive.lg,
     ...Shadows.md,
-    borderWidth: 0,
+    borderWidth: 1,
   },
   infoTitle: {
     fontSize: Typography.fontSize.lg,

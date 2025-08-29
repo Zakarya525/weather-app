@@ -1,7 +1,7 @@
 import {
   DarkTheme,
   DefaultTheme,
-  ThemeProvider,
+  ThemeProvider as NavigationThemeProvider,
 } from "@react-navigation/native";
 import { useFonts } from "expo-font";
 import { Stack } from "expo-router";
@@ -11,7 +11,22 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { FavoritesProvider } from "@/contexts/FavoritesContext";
 import { TemperatureProvider } from "@/contexts/TemperatureContext";
+import { ThemeProvider, useTheme } from "@/contexts/ThemeContext";
 import { useColorScheme } from "@/hooks/useColorScheme";
+
+function AppContent() {
+  const { isDarkActive } = useTheme();
+
+  return (
+    <NavigationThemeProvider value={isDarkActive ? DarkTheme : DefaultTheme}>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="+not-found" />
+      </Stack>
+      <StatusBar style={isDarkActive ? "light" : "dark"} />
+    </NavigationThemeProvider>
+  );
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -26,19 +41,13 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <TemperatureProvider>
-        <FavoritesProvider>
-          <ThemeProvider
-            value={colorScheme === "dark" ? DarkTheme : DefaultTheme}
-          >
-            <Stack>
-              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-              <Stack.Screen name="+not-found" />
-            </Stack>
-            <StatusBar style="auto" />
-          </ThemeProvider>
-        </FavoritesProvider>
-      </TemperatureProvider>
+      <ThemeProvider>
+        <TemperatureProvider>
+          <FavoritesProvider>
+            <AppContent />
+          </FavoritesProvider>
+        </TemperatureProvider>
+      </ThemeProvider>
     </SafeAreaProvider>
   );
 }

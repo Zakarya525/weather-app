@@ -1,3 +1,4 @@
+import { useTheme } from "@/contexts/ThemeContext";
 import { RecentSearch } from "@/hooks/useRecentSearches";
 import { Ionicons } from "@expo/vector-icons";
 import { memo, useCallback } from "react";
@@ -29,6 +30,7 @@ interface RecentSearchItemProps {
 // Memoized individual search item component
 const RecentSearchItem = memo<RecentSearchItemProps>(
   ({ item, onPress, onRemove }) => {
+    const { colors } = useTheme();
     const handlePress = useCallback(() => {
       onPress(item.city);
     }, [item.city, onPress]);
@@ -52,16 +54,37 @@ const RecentSearchItem = memo<RecentSearchItemProps>(
 
     return (
       <View style={styles.itemContainer}>
-        <TouchableOpacity style={styles.recentItem} onPress={handlePress}>
+        <TouchableOpacity
+          style={[
+            styles.recentItem,
+            {
+              backgroundColor: colors.background.secondary,
+              borderColor: colors.border.primary,
+            },
+          ]}
+          onPress={handlePress}
+        >
           <View style={styles.recentItemContent}>
-            <Ionicons name="location-outline" size={16} color="#666" />
-            <Text style={styles.recentText}>{item.city}</Text>
-            <Text style={styles.timestampText}>
+            <Ionicons
+              name="location-outline"
+              size={16}
+              color={colors.icon.secondary}
+            />
+            <Text style={[styles.recentText, { color: colors.text.primary }]}>
+              {item.city}
+            </Text>
+            <Text
+              style={[styles.timestampText, { color: colors.text.tertiary }]}
+            >
               {formatTimestamp(item.timestamp)}
             </Text>
           </View>
           <TouchableOpacity style={styles.removeButton} onPress={handleRemove}>
-            <Ionicons name="close-circle" size={18} color="#999" />
+            <Ionicons
+              name="close-circle"
+              size={18}
+              color={colors.icon.secondary}
+            />
           </TouchableOpacity>
         </TouchableOpacity>
       </View>
@@ -74,6 +97,7 @@ RecentSearchItem.displayName = "RecentSearchItem";
 // Main RecentSearches component
 export const RecentSearches = memo<RecentSearchesProps>(
   ({ recentSearches, onSearchPress, onClearAll, onRemoveSearch }) => {
+    const { colors } = useTheme();
     const handleClearAll = useCallback(() => {
       Alert.alert(
         "Clear Recent Searches",
@@ -102,32 +126,49 @@ export const RecentSearches = memo<RecentSearchesProps>(
       () => (
         <View style={styles.itemContainer}>
           <View style={styles.headerContainer}>
-            <Text style={styles.recentTitle}>Recent Searches</Text>
+            <Text style={[styles.recentTitle, { color: colors.text.primary }]}>
+              Recent Searches
+            </Text>
             {recentSearches.length > 0 && (
               <TouchableOpacity
                 onPress={handleClearAll}
-                style={styles.clearAllButton}
+                style={[
+                  styles.clearAllButton,
+                  {
+                    backgroundColor: colors.background.secondary,
+                    borderColor: colors.border.primary,
+                  },
+                ]}
               >
-                <Text style={styles.clearAllText}>Clear All</Text>
+                <Text
+                  style={[
+                    styles.clearAllText,
+                    { color: colors.text.secondary },
+                  ]}
+                >
+                  Clear All
+                </Text>
               </TouchableOpacity>
             )}
           </View>
         </View>
       ),
-      [recentSearches.length, handleClearAll]
+      [recentSearches.length, handleClearAll, colors]
     );
 
     const ListEmptyComponent = useCallback(
       () => (
         <View style={styles.emptyContainer}>
-          <Ionicons name="search" size={32} color="#ccc" />
-          <Text style={styles.emptyText}>No recent searches</Text>
-          <Text style={styles.emptySubtext}>
+          <Ionicons name="search" size={32} color={colors.icon.secondary} />
+          <Text style={[styles.emptyText, { color: colors.text.secondary }]}>
+            No recent searches
+          </Text>
+          <Text style={[styles.emptySubtext, { color: colors.text.tertiary }]}>
             Your search history will appear here
           </Text>
         </View>
       ),
-      []
+      [colors]
     );
 
     if (recentSearches.length === 0) {
@@ -136,7 +177,13 @@ export const RecentSearches = memo<RecentSearchesProps>(
 
     return (
       <FlatList
-        style={styles.container}
+        style={[
+          styles.container,
+          {
+            backgroundColor: colors.background.card,
+            borderColor: colors.border.primary,
+          },
+        ]}
         data={recentSearches}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
@@ -163,24 +210,17 @@ RecentSearches.displayName = "RecentSearches";
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F5F5F5",
+    borderRadius: 16,
+    marginHorizontal: Math.max(16, screenWidth * 0.04),
+    marginVertical: 8,
+    borderWidth: 1,
   },
   listContent: {
     paddingVertical: 8,
   },
   itemContainer: {
-    backgroundColor: "white",
-    marginHorizontal: Math.max(16, screenWidth * 0.04),
+    marginHorizontal: Math.max(8, screenWidth * 0.02),
     marginVertical: 4,
-    borderRadius: 16,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.08,
-    shadowRadius: 2.84,
-    elevation: 3,
   },
   headerContainer: {
     flexDirection: "row",
@@ -191,21 +231,24 @@ const styles = StyleSheet.create({
   recentTitle: {
     fontSize: Math.max(18, screenWidth * 0.045),
     fontWeight: "600",
-    color: "#333",
   },
   clearAllButton: {
     paddingVertical: 4,
     paddingHorizontal: 8,
+    borderRadius: 8,
+    borderWidth: 1,
   },
   clearAllText: {
     fontSize: Math.max(14, screenWidth * 0.035),
-    color: "#FF6B6B",
     fontWeight: "500",
   },
   recentItem: {
     flexDirection: "row",
     alignItems: "center",
     padding: Math.max(20, screenWidth * 0.05),
+    borderRadius: 12,
+    borderWidth: 1,
+    marginVertical: 4,
   },
   recentItemContent: {
     flex: 1,
@@ -216,12 +259,10 @@ const styles = StyleSheet.create({
   recentText: {
     flex: 1,
     fontSize: Math.max(16, screenWidth * 0.04),
-    color: "#333",
     fontWeight: "500",
   },
   timestampText: {
     fontSize: Math.max(12, screenWidth * 0.03),
-    color: "#999",
   },
   removeButton: {
     padding: 4,
@@ -233,13 +274,11 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: Math.max(16, screenWidth * 0.04),
-    color: "#999",
     marginTop: 12,
     fontWeight: "500",
   },
   emptySubtext: {
     fontSize: Math.max(14, screenWidth * 0.035),
-    color: "#ccc",
     marginTop: 4,
   },
 });

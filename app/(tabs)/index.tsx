@@ -12,6 +12,7 @@ import {
   Spacing,
   Typography,
 } from "@/constants/DesignSystem";
+import { useTheme } from "@/contexts/ThemeContext";
 import { fetchWeatherData, WeatherData } from "@/utils/api";
 import { getAccessibleWeatherTheme } from "@/utils/weatherTheme";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -35,6 +36,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentWeatherIndex, setCurrentWeatherIndex] = useState(0);
+  const { colors } = useTheme();
 
   // Enhanced animations
   const fadeValue = useState(new Animated.Value(1))[0];
@@ -127,14 +129,20 @@ export default function HomeScreen() {
   const renderEmptyState = useCallback(
     () => (
       <View style={styles.emptyContainer}>
-        <Ionicons name="cloud-offline" size={64} color={Colors.neutral[400]} />
-        <Text style={styles.emptyTitle}>No Weather Data</Text>
-        <Text style={styles.emptyText}>
+        <Ionicons
+          name="cloud-offline"
+          size={64}
+          color={colors.icon.secondary}
+        />
+        <Text style={[styles.emptyTitle, { color: colors.text.secondary }]}>
+          No Weather Data
+        </Text>
+        <Text style={[styles.emptyText, { color: colors.text.tertiary }]}>
           Pull down to refresh or check your connection
         </Text>
       </View>
     ),
-    []
+    [colors]
   );
 
   if (loading) {
@@ -153,7 +161,9 @@ export default function HomeScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View
+      style={[styles.container, { backgroundColor: colors.background.primary }]}
+    >
       <WeatherGradient
         condition={currentWeather?.condition || "partly cloudy"}
         intensity={0.3}
@@ -165,6 +175,8 @@ export default function HomeScreen() {
             style={[
               styles.header,
               {
+                backgroundColor: colors.background.card,
+                borderColor: colors.border.primary,
                 transform: [{ translateY: headerSlideValue }],
               },
             ]}
@@ -193,8 +205,10 @@ export default function HomeScreen() {
               </View>
               <TemperatureToggle style={styles.temperatureToggle} />
             </View>
-            <Text style={styles.title}>Weather App</Text>
-            <Text style={styles.subtitle}>
+            <Text style={[styles.title, { color: colors.text.primary }]}>
+              Weather App
+            </Text>
+            <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
               {weatherData.length} cities available
             </Text>
           </Animated.View>
