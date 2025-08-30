@@ -40,7 +40,6 @@ interface WeatherCardProps {
   isCompact?: boolean;
 }
 
-// Enhanced weather icon mapping using MaterialCommunityIcons for better weather representation
 const getWeatherIcon = (condition: string) => {
   const iconName = getWeatherIconName(condition);
   return iconName;
@@ -56,13 +55,11 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
   const { isFavorite, addToFavorites, removeFromFavorites } = useFavorites();
   const { colors, shadows } = useTheme();
 
-  // Enhanced animations
+  // Refined animations
   const scaleValue = React.useRef(new Animated.Value(1)).current;
   const fadeValue = React.useRef(new Animated.Value(0)).current;
   const glowValue = React.useRef(new Animated.Value(0)).current;
-  const rotateValue = React.useRef(new Animated.Value(0)).current;
 
-  // Accessibility labels and hints
   const accessibilityLabel = getWeatherDescription(weather);
   const accessibilityHint = getWeatherCardAccessibilityHint(
     weather.city,
@@ -70,7 +67,6 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
   );
 
   React.useEffect(() => {
-    // Staggered entrance animation
     Animated.sequence([
       Animated.timing(fadeValue, {
         toValue: 1,
@@ -83,26 +79,17 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
         useNativeDriver: true,
       }),
     ]).start();
-
-    // Icon rotation animation
-    Animated.loop(
-      Animated.timing(rotateValue, {
-        toValue: 1,
-        duration: 10000,
-        useNativeDriver: true,
-      })
-    ).start();
   }, [weather.condition]);
 
   const handlePressIn = () => {
     Animated.parallel([
       Animated.spring(scaleValue, {
-        toValue: 0.95,
+        toValue: 0.98,
         ...Animations.spring.snappy,
         useNativeDriver: true,
       }),
       Animated.timing(glowValue, {
-        toValue: 1.5,
+        toValue: 1.2,
         duration: Animations.timing.fast,
         useNativeDriver: true,
       }),
@@ -125,7 +112,7 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
   };
 
   const handleFavoritePress = async (e: any) => {
-    e.stopPropagation(); // Prevent triggering the card's onPress
+    e.stopPropagation();
 
     try {
       if (isFavorite(weather.id)) {
@@ -165,7 +152,7 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
           onPress={onPress}
           onPressIn={handlePressIn}
           onPressOut={handlePressOut}
-          activeOpacity={0.9}
+          activeOpacity={0.95}
           accessible={true}
           accessibilityLabel={accessibilityLabel}
           accessibilityHint={accessibilityHint}
@@ -175,62 +162,47 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
             condition={weather.condition}
             style={styles.gradientOverlay}
           />
-          <View style={styles.cardContent}>
+          <View style={styles.compactCardContent}>
             <View style={styles.compactHeader}>
-              <Text
-                style={[styles.compactCityName, { color: colors.text.primary }]}
-              >
-                {weather.city}
-              </Text>
-              <View style={styles.compactHeaderRight}>
+              <View style={styles.compactLeftSection}>
+                <Text
+                  style={[
+                    styles.compactCityName,
+                    { color: colors.text.primary },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {weather.city}
+                </Text>
+                <Text
+                  style={[
+                    styles.compactCondition,
+                    { color: colors.text.secondary },
+                  ]}
+                  numberOfLines={1}
+                >
+                  {weather.condition}
+                </Text>
+              </View>
+
+              <View style={styles.compactRightSection}>
                 <MaterialCommunityIcons
                   name={getWeatherIcon(weather.condition) as any}
-                  size={24}
+                  size={28}
                   color={theme.iconColor}
                 />
-                <TouchableOpacity
-                  style={styles.compactFavoriteButton}
-                  onPress={handleFavoritePress}
-                  activeOpacity={0.7}
-                  accessible={true}
-                  accessibilityLabel={
-                    isFavorite(weather.id)
-                      ? `Remove ${weather.city} from favorites`
-                      : `Add ${weather.city} to favorites`
-                  }
-                  accessibilityRole="button"
+                <Text
+                  style={[
+                    styles.compactTemperature,
+                    { color: theme.primaryColor },
+                  ]}
                 >
-                  <Ionicons
-                    name={isFavorite(weather.id) ? "star" : "star-outline"}
-                    size={20}
-                    color={
-                      isFavorite(weather.id) ? "#FFD700" : colors.icon.secondary
-                    }
-                  />
-                </TouchableOpacity>
+                  {getTemperatureDisplay(weather.temperature)}
+                </Text>
               </View>
             </View>
 
-            <View style={styles.compactTemperatureContainer}>
-              <Text
-                style={[
-                  styles.compactTemperature,
-                  { color: theme.primaryColor },
-                ]}
-              >
-                {getTemperatureDisplay(weather.temperature)}
-              </Text>
-              <Text
-                style={[
-                  styles.compactCondition,
-                  { color: colors.text.secondary },
-                ]}
-              >
-                {weather.condition}
-              </Text>
-            </View>
-
-            <View style={styles.compactDetails}>
+            <View style={styles.compactFooter}>
               <View style={styles.compactDetailItem}>
                 <Ionicons name="water" size={14} color={theme.secondaryColor} />
                 <Text
@@ -257,6 +229,26 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
                   {weather.windSpeed} km/h
                 </Text>
               </View>
+              <TouchableOpacity
+                style={styles.compactFavoriteButton}
+                onPress={handleFavoritePress}
+                activeOpacity={0.8}
+                accessible={true}
+                accessibilityLabel={
+                  isFavorite(weather.id)
+                    ? `Remove ${weather.city} from favorites`
+                    : `Add ${weather.city} to favorites`
+                }
+                accessibilityRole="button"
+              >
+                <Ionicons
+                  name={isFavorite(weather.id) ? "star" : "star-outline"}
+                  size={18}
+                  color={
+                    isFavorite(weather.id) ? "#FFD700" : colors.icon.secondary
+                  }
+                />
+              </TouchableOpacity>
             </View>
           </View>
         </TouchableOpacity>
@@ -285,7 +277,7 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        activeOpacity={0.9}
+        activeOpacity={0.95}
         accessible={true}
         accessibilityLabel={accessibilityLabel}
         accessibilityHint={accessibilityHint}
@@ -297,19 +289,30 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
         />
         <View style={styles.cardContent}>
           <View style={styles.header}>
-            <Text style={[styles.cityName, { color: colors.text.primary }]}>
-              {weather.city}
-            </Text>
-            <View style={styles.headerRight}>
+            <View style={styles.leftSection}>
+              <Text
+                style={[styles.cityName, { color: colors.text.primary }]}
+                numberOfLines={1}
+              >
+                {weather.city}
+              </Text>
+              <Text
+                style={[styles.condition, { color: colors.text.secondary }]}
+              >
+                {weather.condition}
+              </Text>
+            </View>
+
+            <View style={styles.rightSection}>
               <MaterialCommunityIcons
                 name={getWeatherIcon(weather.condition) as any}
-                size={32}
+                size={36}
                 color={theme.iconColor}
               />
               <TouchableOpacity
                 style={styles.favoriteButton}
                 onPress={handleFavoritePress}
-                activeOpacity={0.7}
+                activeOpacity={0.8}
                 accessible={true}
                 accessibilityLabel={
                   isFavorite(weather.id)
@@ -320,7 +323,7 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
               >
                 <Ionicons
                   name={isFavorite(weather.id) ? "star" : "star-outline"}
-                  size={24}
+                  size={22}
                   color={
                     isFavorite(weather.id) ? "#FFD700" : colors.icon.secondary
                   }
@@ -329,12 +332,9 @@ export const WeatherCard: React.FC<WeatherCardProps> = ({
             </View>
           </View>
 
-          <View style={styles.temperatureContainer}>
+          <View style={styles.temperatureSection}>
             <Text style={[styles.temperature, { color: theme.primaryColor }]}>
               {getTemperatureDisplay(weather.temperature)}
-            </Text>
-            <Text style={[styles.condition, { color: colors.text.secondary }]}>
-              {weather.condition}
             </Text>
           </View>
 
@@ -370,11 +370,11 @@ const styles = StyleSheet.create({
   card: {
     ...GlassMorphism.light,
     borderRadius: BorderRadius.xl,
-    padding: Spacing.xl,
-    marginVertical: Spacing.md,
+    padding: Spacing.lg,
+    marginVertical: Spacing.sm,
     marginHorizontal: Spacing.responsive.base,
     ...Shadows.lg,
-    minHeight: 180,
+    minHeight: 160,
     overflow: "hidden",
     position: "relative",
   },
@@ -385,7 +385,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     borderRadius: BorderRadius.xl,
-    opacity: 0.1,
+    opacity: 0.08,
   },
   cardContent: {
     position: "relative",
@@ -395,128 +395,132 @@ const styles = StyleSheet.create({
   compactCard: {
     ...GlassMorphism.light,
     borderRadius: BorderRadius.lg,
-    padding: Spacing.lg,
-    marginVertical: Spacing.sm,
+    padding: Spacing.md,
+    marginVertical: Spacing.xs,
     marginHorizontal: Spacing.responsive.sm,
     ...Shadows.md,
-    minHeight: 140,
+    minHeight: 120,
     overflow: "hidden",
     position: "relative",
+  },
+  compactCardContent: {
+    position: "relative",
+    zIndex: 2,
+    flex: 1,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: Spacing.lg,
+    alignItems: "flex-start",
+    marginBottom: Spacing.md,
   },
   compactHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Spacing.md,
+    marginBottom: Spacing.sm,
   },
-  headerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: Spacing.md,
+  leftSection: {
+    flex: 1,
+    marginRight: Spacing.md,
   },
-  compactHeaderRight: {
-    flexDirection: "row",
+  compactLeftSection: {
+    flex: 1,
+    marginRight: Spacing.sm,
+  },
+  rightSection: {
     alignItems: "center",
     gap: Spacing.sm,
   },
+  compactRightSection: {
+    alignItems: "center",
+    gap: Spacing.xs,
+  },
   favoriteButton: {
-    padding: Spacing.sm,
+    padding: Spacing.xs,
     borderRadius: BorderRadius.full,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
     ...Shadows.sm,
   },
   compactFavoriteButton: {
     padding: Spacing.xs,
     borderRadius: BorderRadius.full,
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: "rgba(255, 255, 255, 0.15)",
     ...Shadows.sm,
   },
   cityName: {
-    fontSize: Typography.fontSize.xl,
-    fontWeight: Typography.fontWeight.semiBold,
-    color: Colors.neutral[900],
-    flex: 1,
-    marginRight: Spacing.sm,
-    letterSpacing: Typography.letterSpacing.tight,
-  },
-  compactCityName: {
     fontSize: Typography.fontSize.lg,
     fontWeight: Typography.fontWeight.semiBold,
     color: Colors.neutral[900],
-    flex: 1,
-    marginRight: Spacing.sm,
+    marginBottom: Spacing.xs,
     letterSpacing: Typography.letterSpacing.tight,
   },
-  temperatureContainer: {
-    marginBottom: Spacing.lg,
-    alignItems: "flex-start",
+  compactCityName: {
+    fontSize: Typography.fontSize.base,
+    fontWeight: Typography.fontWeight.semiBold,
+    color: Colors.neutral[900],
+    marginBottom: Spacing.xs,
+    letterSpacing: Typography.letterSpacing.tight,
   },
-  compactTemperatureContainer: {
+  temperatureSection: {
     marginBottom: Spacing.md,
     alignItems: "flex-start",
   },
   temperature: {
-    fontSize: Typography.fontSize["4xl"],
+    fontSize: Typography.fontSize["3xl"],
     fontWeight: Typography.fontWeight.bold,
-    marginBottom: Spacing.xs,
     letterSpacing: Typography.letterSpacing.tight,
   },
   compactTemperature: {
-    fontSize: Typography.fontSize["3xl"],
+    fontSize: Typography.fontSize.xl,
     fontWeight: Typography.fontWeight.bold,
-    marginBottom: Spacing.xs,
     letterSpacing: Typography.letterSpacing.tight,
   },
   condition: {
-    fontSize: Typography.fontSize.base,
+    fontSize: Typography.fontSize.sm,
     color: Colors.neutral[600],
     fontWeight: Typography.fontWeight.medium,
   },
   compactCondition: {
-    fontSize: Typography.fontSize.sm,
+    fontSize: Typography.fontSize.xs,
     color: Colors.neutral[600],
     fontWeight: Typography.fontWeight.medium,
   },
   details: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingTop: Spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.2)",
-  },
-  compactDetails: {
-    flexDirection: "row",
-    justifyContent: "space-between",
     paddingTop: Spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: "rgba(255, 255, 255, 0.2)",
+    borderTopColor: "rgba(255, 255, 255, 0.1)",
+  },
+  compactFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingTop: Spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255, 255, 255, 0.1)",
   },
   detailItem: {
     flexDirection: "row",
     alignItems: "center",
-    gap: Spacing.sm,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
+    gap: Spacing.xs,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.full,
   },
   compactDetailItem: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.xs,
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
-    paddingHorizontal: Spacing.sm,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    paddingHorizontal: Spacing.xs,
     paddingVertical: Spacing.xs,
     borderRadius: BorderRadius.full,
   },
   detailText: {
-    fontSize: Typography.fontSize.sm,
+    fontSize: Typography.fontSize.xs,
     color: Colors.neutral[700],
     fontWeight: Typography.fontWeight.medium,
   },
