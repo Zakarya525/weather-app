@@ -18,11 +18,10 @@ import { fetchWeatherData, WeatherData } from "@/utils/api";
 import { isConnected } from "@/utils/networkAndCache";
 import { getAccessibleWeatherTheme } from "@/utils/weatherTheme";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
-  FlatList,
   RefreshControl,
   StyleSheet,
   Text,
@@ -32,6 +31,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
+// Animation constants
+const HEADER_MAX_HEIGHT = 180;
+const HEADER_MIN_HEIGHT = 100;
+const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
+
 export default function HomeScreen() {
   const [weatherData, setWeatherData] = useState<WeatherData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +44,12 @@ export default function HomeScreen() {
   const [currentWeatherIndex, setCurrentWeatherIndex] = useState(0);
   const [isOffline, setIsOffline] = useState(false);
   const { colors } = useTheme();
+
+  // Animation refs
+  const scrollY = useRef(new Animated.Value(0)).current;
+  const headerOpacity = useRef(new Animated.Value(1)).current;
+  const titleScale = useRef(new Animated.Value(1)).current;
+  const iconScale = useRef(new Animated.Value(1)).current;
 
   // Check and monitor network connectivity
   const checkConnectivity = useCallback(async () => {
@@ -57,6 +67,31 @@ export default function HomeScreen() {
   const currentTheme = currentWeather
     ? getAccessibleWeatherTheme(currentWeather.condition)
     : getAccessibleWeatherTheme("partly cloudy");
+
+  // Header animation on scroll
+  const headerTranslateY = scrollY.interpolate({
+    inputRange: [0, HEADER_SCROLL_DISTANCE],
+    outputRange: [0, -HEADER_SCROLL_DISTANCE / 2],
+    extrapolate: "clamp",
+  });
+
+  const headerScale = scrollY.interpolate({
+    inputRange: [0, HEADER_SCROLL_DISTANCE],
+    outputRange: [1, 0.9],
+    extrapolate: "clamp",
+  });
+
+  const titleOpacity = scrollY.interpolate({
+    inputRange: [0, HEADER_SCROLL_DISTANCE / 2, HEADER_SCROLL_DISTANCE],
+    outputRange: [1, 0.8, 0.6],
+    extrapolate: "clamp",
+  });
+
+  const subtitleOpacity = scrollY.interpolate({
+    inputRange: [0, HEADER_SCROLL_DISTANCE / 3],
+    outputRange: [1, 0],
+    extrapolate: "clamp",
+  });
 
   const loadWeatherData = useCallback(async () => {
     try {
@@ -188,43 +223,71 @@ export default function HomeScreen() {
               {
                 backgroundColor: colors.background.card,
                 borderColor: colors.border.primary,
-                transform: [{ translateY: headerSlideValue }],
+                transform: [
+                  { translateY: headerSlideValue },
+                  { translateY: headerTranslateY },
+                  { scale: headerScale },
+                ],
               },
             ]}
           >
             <View style={styles.headerTop}>
               <View style={styles.headerLeft}>
-                <MaterialCommunityIcons
-                  name={
-                    currentWeather
-                      ? currentWeather.condition.toLowerCase().includes("sunny")
-                        ? "weather-sunny"
-                        : currentWeather.condition
+                <Animated.View style={{ transform: [{ scale: iconScale }] }}>
+                  <MaterialCommunityIcons
+                    name={
+                      currentWeather
+                        ? currentWeather.condition
                             .toLowerCase()
-                            .includes("rain")
-                        ? "weather-rainy"
-                        : currentWeather.condition
-                            .toLowerCase()
-                            .includes("cloud")
-                        ? "weather-cloudy"
+                            .includes("sunny")
+                          ? "weather-sunny"
+                          : currentWeather.condition
+                              .toLowerCase()
+                              .includes("rain")
+                          ? "weather-rainy"
+                          : currentWeather.condition
+                              .toLowerCase()
+                              .includes("cloud")
+                          ? "weather-cloudy"
+                          : "weather-partly-cloudy"
                         : "weather-partly-cloudy"
-                      : "weather-partly-cloudy"
-                  }
-                  size={Math.max(32, screenWidth * 0.08)}
-                  color={currentTheme.primaryColor}
-                />
+                    }
+                    size={Math.max(32, screenWidth * 0.08)}
+                    color={currentTheme.primaryColor}
+                  />
+                </Animated.View>
               </View>
               <TemperatureToggle style={styles.temperatureToggle} />
             </View>
-            <Text style={[styles.title, { color: colors.text.primary }]}>
-              Weather App
-            </Text>
-            <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
+            <Animated.View
+              style={[styles.titleContainer, { opacity: titleOpacity }]}
+            >
+              <Animated.Text
+                style={[
+                  styles.title,
+                  {
+                    color: colors.text.primary,
+                    transform: [{ scale: titleScale }],
+                  },
+                ]}
+              >
+                Weather App
+              </Animated.Text>
+            </Animated.View>
+            <Animated.Text
+              style={[
+                styles.subtitle,
+                {
+                  color: colors.text.secondary,
+                  opacity: subtitleOpacity,
+                },
+              ]}
+            >
               {weatherData.length} cities available
-            </Text>
+            </Animated.Text>
           </Animated.View>
 
-          <FlatList
+          <Animated.FlatList
             data={weatherData}
             keyExtractor={(item) => item.id.toString()}
             renderItem={renderWeatherCard}
@@ -243,6 +306,13 @@ export default function HomeScreen() {
             maxToRenderPerBatch={10}
             windowSize={10}
             removeClippedSubviews={true}
+            onScroll={Animated.event(
+              [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+              { useNativeDriver: false }
+            )}
+            scrollEventThrottle={16}
+            bounces={true}
+            decelerationRate="normal"
           />
         </SafeAreaView>
       </Animated.View>
@@ -274,10 +344,15 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingVertical: Spacing.responsive.lg,
     marginHorizontal: Spacing.responsive.base,
-    marginTop: Spacing.responsive.base,
+    marginTop:
+      screenHeight < 700
+        ? Spacing.responsive["2xl"]
+        : Spacing.responsive["3xl"],
     borderRadius: BorderRadius.xl,
     ...Shadows.md,
     borderWidth: 0,
+    height: HEADER_MAX_HEIGHT,
+    overflow: "hidden",
   },
   headerTop: {
     flexDirection: "row",
@@ -285,12 +360,19 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     width: "100%",
     paddingHorizontal: Spacing.responsive.lg,
+    marginBottom: Spacing.sm,
   },
   headerLeft: {
     flex: 1,
+    alignItems: "flex-start",
   },
   temperatureToggle: {
     marginRight: 0,
+  },
+  titleContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: Spacing.sm,
   },
   title: {
     fontSize: Typography.fontSize["3xl"],
@@ -299,15 +381,17 @@ const styles = StyleSheet.create({
     marginTop: Spacing.md,
     marginBottom: Spacing.xs,
     letterSpacing: Typography.letterSpacing.tight,
+    textAlign: "center",
   },
   subtitle: {
     fontSize: Typography.fontSize.base,
     color: Colors.neutral[600],
     fontWeight: Typography.fontWeight.medium,
+    textAlign: "center",
+    marginTop: Spacing.xs,
   },
   listContainer: {
     paddingVertical: Spacing.responsive.lg,
-    paddingBottom: Spacing.responsive["2xl"],
     paddingHorizontal: Spacing.xs,
   },
   emptyContainer: {
