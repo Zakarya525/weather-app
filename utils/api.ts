@@ -1,6 +1,51 @@
 import { Platform } from "react-native";
 import { getCachedData, isConnected, setCachedData } from "./networkAndCache";
 
+// Function to get local IP address dynamically
+const getLocalIPAddress = async (): Promise<string> => {
+  try {
+    // For web, always use localhost
+    if (Platform.OS === "web") {
+      return "localhost";
+    }
+
+    // For mobile, try a few common IPs quickly
+    const commonIPs = [
+      "192.168.1.11",
+      "192.168.1.12",
+      "192.168.0.1",
+      "10.0.0.1",
+    ];
+
+    for (const ip of commonIPs) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 2000);
+
+        const response = await fetch(`http://${ip}:3001/weather`, {
+          signal: controller.signal,
+          method: "GET",
+        });
+
+        clearTimeout(timeoutId);
+        if (response.ok) {
+          console.log(`Found working backend at: ${ip}`);
+          return ip;
+        }
+      } catch (error) {
+        // Continue to next IP
+      }
+    }
+
+    // Fallback to the most likely IP
+    console.warn("Could not detect working backend, using fallback IP");
+    return "192.168.1.11";
+  } catch (error) {
+    console.warn("Error in IP detection, using fallback:", error);
+    return "192.168.1.11";
+  }
+};
+
 export interface WeatherData {
   id: number;
   city: string;
@@ -12,16 +57,15 @@ export interface WeatherData {
 }
 
 // Use different URLs for different platforms
-const getApiBaseUrl = () => {
+const getApiBaseUrl = async (): Promise<string> => {
   if (Platform.OS === "web") {
     return "http://localhost:3001";
   } else {
-    // For mobile devices, use your computer's IP address
-    return "http://192.168.1.12:3001";
+    // For mobile devices, dynamically detect the IP address
+    const localIP = await getLocalIPAddress();
+    return `http://${localIP}:3001`;
   }
 };
-
-const API_BASE_URL = getApiBaseUrl();
 
 // Helper function to capitalize first letter
 const capitalizeFirstLetter = (str: string): string => {
@@ -42,8 +86,9 @@ export const fetchWeatherData = async (): Promise<WeatherData[]> => {
       throw new Error("No internet connection and no cached data available");
     }
 
-    console.log("Fetching from:", `${API_BASE_URL}/weather`);
-    const response = await fetch(`${API_BASE_URL}/weather`);
+    const apiBaseUrl = await getApiBaseUrl();
+    console.log("Fetching from:", `${apiBaseUrl}/weather`);
+    const response = await fetch(`${apiBaseUrl}/weather`);
 
     if (!response.ok) {
       if (cachedData) {
@@ -85,8 +130,9 @@ export const fetchWeatherByCity = async (
       throw new Error("No internet connection and no cached data available");
     }
 
+    const apiBaseUrl = await getApiBaseUrl();
     const response = await fetch(
-      `${API_BASE_URL}/weather?city=${encodeURIComponent(normalizedCityName)}`
+      `${apiBaseUrl}/weather?city=${encodeURIComponent(normalizedCityName)}`
     );
 
     if (!response.ok) {
