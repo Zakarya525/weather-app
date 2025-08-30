@@ -34,8 +34,8 @@ import {
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 // Animation constants
-const HEADER_MAX_HEIGHT = 220; // Increased from 180 to accommodate extra padding
-const HEADER_MIN_HEIGHT = 140; // Increased from 100 to maintain proportions
+const HEADER_MAX_HEIGHT = Platform.OS === "ios" ? 220 : 240; // Increased Android height
+const HEADER_MIN_HEIGHT = Platform.OS === "ios" ? 140 : 160; // Increased Android min height
 const HEADER_SCROLL_DISTANCE = HEADER_MAX_HEIGHT - HEADER_MIN_HEIGHT;
 
 export default function HomeScreen() {
@@ -339,7 +339,9 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     width: "100%",
     paddingHorizontal: Spacing.responsive.lg,
-    marginBottom: Spacing.sm,
+    marginBottom: Platform.OS === "ios" ? Spacing.sm : Spacing.md, // Increased Android margin
+    // Ensure proper spacing for Android
+    minHeight: Platform.OS === "android" ? 48 : undefined,
   },
   headerLeft: {
     flex: 1,
@@ -347,6 +349,10 @@ const styles = StyleSheet.create({
   },
   temperatureToggle: {
     marginRight: 0,
+    // Ensure proper spacing on Android
+    marginLeft: Platform.OS === "android" ? Spacing.sm : 0,
+    // Prevent clipping on Android
+    zIndex: 1,
   },
   titleContainer: {
     alignItems: "center",

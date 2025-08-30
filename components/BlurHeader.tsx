@@ -34,25 +34,19 @@ export default function BlurHeader({
   // Animated values for effects
   const headerOpacity = scrollY.interpolate({
     inputRange: [0, blurThreshold / 2, blurThreshold],
-    outputRange: [1, 0.97, 0.9],
+    outputRange: [1, 0.98, 0.95],
     extrapolate: "clamp",
   });
 
   const shadowOpacity = scrollY.interpolate({
     inputRange: [0, blurThreshold / 2, blurThreshold],
-    outputRange: [0, 0.08, 0.2],
+    outputRange: [0, 0.06, 0.15],
     extrapolate: "clamp",
   });
 
   const borderOpacity = scrollY.interpolate({
     inputRange: [0, blurThreshold / 3, blurThreshold],
-    outputRange: [0.05, 0.2, 0.4],
-    extrapolate: "clamp",
-  });
-
-  const scaleEffect = scrollY.interpolate({
-    inputRange: [0, blurThreshold],
-    outputRange: [1, 0.98],
+    outputRange: [0.03, 0.15, 0.3],
     extrapolate: "clamp",
   });
 
@@ -63,8 +57,8 @@ export default function BlurHeader({
         {
           paddingTop:
             Platform.OS === "ios"
-              ? insets.top + 20
-              : (StatusBar.currentHeight || 0) + 20,
+              ? insets.top + 12
+              : (StatusBar.currentHeight || 0) + 16,
           opacity: headerOpacity,
         },
         style,
@@ -85,14 +79,14 @@ export default function BlurHeader({
             {
               opacity: scrollY.interpolate({
                 inputRange: [0, blurThreshold / 2, blurThreshold],
-                outputRange: [0, 0.3, 0.5],
+                outputRange: [0, 0.25, 0.4],
                 extrapolate: "clamp",
               }),
             },
           ]}
         >
           <BlurView
-            intensity={50}
+            intensity={40}
             tint={isDarkActive ? "dark" : "light"}
             style={StyleSheet.absoluteFillObject}
           />
@@ -107,7 +101,7 @@ export default function BlurHeader({
             backgroundColor: backgroundColor || colors.background.card,
             opacity: scrollY.interpolate({
               inputRange: [0, blurThreshold / 4],
-              outputRange: [0.7, 0.85],
+              outputRange: [0.75, 0.9],
               extrapolate: "clamp",
             }),
           },
@@ -120,11 +114,11 @@ export default function BlurHeader({
           StyleSheet.absoluteFillObject,
           {
             backgroundColor: isDarkActive
-              ? "rgba(28, 28, 30, 0.2)"
-              : "rgba(255, 255, 255, 0.2)",
+              ? "rgba(28, 28, 30, 0.15)"
+              : "rgba(255, 255, 255, 0.15)",
             opacity: scrollY.interpolate({
               inputRange: [0, blurThreshold / 2],
-              outputRange: [0, 0.6],
+              outputRange: [0, 0.5],
               extrapolate: "clamp",
             }),
           },
@@ -137,8 +131,8 @@ export default function BlurHeader({
           StyleSheet.absoluteFillObject,
           {
             backgroundColor: isDarkActive
-              ? "rgba(0, 0, 0, 0.03)"
-              : "rgba(0, 0, 0, 0.01)",
+              ? "rgba(0, 0, 0, 0.02)"
+              : "rgba(0, 0, 0, 0.008)",
             opacity: scrollY.interpolate({
               inputRange: [0, blurThreshold],
               outputRange: [0, 1],
@@ -153,7 +147,7 @@ export default function BlurHeader({
         style={[
           StyleSheet.absoluteFillObject,
           {
-            ...Shadows.lg,
+            ...Shadows.md,
             shadowOpacity,
           },
         ]}
@@ -164,7 +158,7 @@ export default function BlurHeader({
         style={[
           StyleSheet.absoluteFillObject,
           {
-            borderBottomWidth: 1,
+            borderBottomWidth: 0.5,
             borderBottomColor: colors.border.primary,
             opacity: borderOpacity,
           },
@@ -172,14 +166,7 @@ export default function BlurHeader({
       />
 
       {/* Content */}
-      <Animated.View
-        style={[
-          styles.contentContainer,
-          {
-            transform: [{ scale: scaleEffect }],
-          },
-        ]}
-      >
+      <Animated.View style={[styles.contentContainer]}>
         {children}
       </Animated.View>
     </Animated.View>
@@ -189,16 +176,25 @@ export default function BlurHeader({
 const styles = StyleSheet.create({
   headerContainer: {
     position: "relative",
-    paddingVertical: Spacing.responsive.lg,
+    paddingVertical: Spacing.responsive.md,
     alignItems: "center",
     justifyContent: "center",
     zIndex: 1000,
-    elevation: 10,
+    elevation: 8,
+    overflow: "visible",
+    ...(Platform.OS === "android" && {
+      minHeight: 80,
+      paddingBottom: Spacing.responsive.sm,
+    }),
   },
   contentContainer: {
     alignItems: "center",
     justifyContent: "center",
     width: "100%",
-    paddingHorizontal: Math.max(20, screenWidth * 0.05),
+    paddingHorizontal: Math.max(16, screenWidth * 0.04),
+    paddingBottom: Platform.OS === "android" ? Spacing.sm : 0,
+    ...(Platform.OS === "android" && {
+      minHeight: 60,
+    }),
   },
 });

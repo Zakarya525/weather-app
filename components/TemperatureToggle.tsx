@@ -1,5 +1,12 @@
 import React from "react";
-import { Dimensions, StyleSheet, Switch, Text, View } from "react-native";
+import {
+  Dimensions,
+  Platform,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from "react-native";
 import { useTemperature } from "../contexts/TemperatureContext";
 import { useTheme } from "../contexts/ThemeContext";
 
@@ -43,6 +50,14 @@ export const TemperatureToggle: React.FC<TemperatureToggleProps> = ({
         thumbColor="#fff"
         ios_backgroundColor={colors.border.primary}
         style={styles.switch}
+        // Android-specific props to prevent rendering issues
+        {...(Platform.OS === "android" && {
+          thumbTintColor: "#fff",
+          trackColor: {
+            false: colors.icon.accent,
+            true: "#FF6B35",
+          },
+        })}
       />
       <Text
         style={[
@@ -72,13 +87,35 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
+    // Android-specific improvements
+    ...(Platform.OS === "android" && {
+      elevation: 4,
+      marginVertical: 2,
+      // Ensure proper rendering on Android
+      backgroundColor: "rgba(255, 255, 255, 0.95)",
+      // Prevent clipping during scroll
+      overflow: "visible",
+    }),
   },
   switch: {
     marginHorizontal: 8,
-    transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }],
+    // Remove transform scale that causes Android issues
+    // transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }],
+    // Android-specific switch styling
+    ...(Platform.OS === "android" && {
+      marginVertical: 2,
+      // Ensure proper size on Android
+      minWidth: 44,
+      minHeight: 24,
+    }),
   },
   unitLabel: {
     fontSize: Math.max(14, screenWidth * 0.035),
     fontWeight: "600",
+    // Android-specific text improvements
+    ...(Platform.OS === "android" && {
+      includeFontPadding: false,
+      textAlignVertical: "center",
+    }),
   },
 });
