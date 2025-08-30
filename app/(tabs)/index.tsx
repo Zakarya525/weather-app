@@ -370,7 +370,7 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xs,
   },
   listContainer: {
-    paddingTop: HEADER_MAX_HEIGHT + Spacing.responsive.lg,
+    paddingTop: HEADER_MAX_HEIGHT + Spacing.responsive["2xl"],
     paddingBottom: Spacing.responsive.lg,
     paddingHorizontal: Spacing.xs,
   },
