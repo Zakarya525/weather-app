@@ -240,7 +240,7 @@ export default function HomeScreen() {
                 color={currentTheme.primaryColor}
               />
             </View>
-            <TemperatureToggle style={styles.temperatureToggle} />
+            <TemperatureToggle />
           </View>
           <View style={styles.titleContainer}>
             <Text

@@ -72,6 +72,7 @@ export default function BlurHeader({
             overflow: "hidden",
           },
         ]}
+        pointerEvents="none"
       >
         <Animated.View
           style={[
@@ -106,6 +107,7 @@ export default function BlurHeader({
             }),
           },
         ]}
+        pointerEvents="none"
       />
 
       {/* Glass Morphism Overlay */}
@@ -123,6 +125,7 @@ export default function BlurHeader({
             }),
           },
         ]}
+        pointerEvents="none"
       />
 
       {/* Subtle Depth Overlay */}
@@ -140,6 +143,7 @@ export default function BlurHeader({
             }),
           },
         ]}
+        pointerEvents="none"
       />
 
       {/* Animated Shadow */}
@@ -151,6 +155,7 @@ export default function BlurHeader({
             shadowOpacity,
           },
         ]}
+        pointerEvents="none"
       />
 
       {/* Animated Border */}
@@ -163,10 +168,11 @@ export default function BlurHeader({
             opacity: borderOpacity,
           },
         ]}
+        pointerEvents="none"
       />
 
       {/* Content */}
-      <Animated.View style={[styles.contentContainer]}>
+      <Animated.View style={[styles.contentContainer]} pointerEvents="box-none">
         {children}
       </Animated.View>
     </Animated.View>
@@ -181,10 +187,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     zIndex: 1000,
     elevation: 8,
-    overflow: "visible",
+    overflow: "visible", // Critical: allow child elements to render above
     ...(Platform.OS === "android" && {
       minHeight: 80,
       paddingBottom: Spacing.responsive.sm,
+      // Ensure interactive elements aren't clipped
+      paddingTop: Spacing.responsive.md + 5,
     }),
   },
   contentContainer: {
@@ -193,8 +201,11 @@ const styles = StyleSheet.create({
     width: "100%",
     paddingHorizontal: Math.max(16, screenWidth * 0.04),
     paddingBottom: Platform.OS === "android" ? Spacing.sm : 0,
+    overflow: "visible", // Allow interactive elements to be visible
     ...(Platform.OS === "android" && {
       minHeight: 60,
+      // Extra padding to prevent clipping of elevated elements
+      paddingVertical: Spacing.sm + 2,
     }),
   },
 });
