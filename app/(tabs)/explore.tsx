@@ -1,23 +1,3 @@
-import BlurHeader from "@/components/BlurHeader";
-import { OfflineBanner } from "@/components/OfflineBanner";
-import { RecentSearches } from "@/components/RecentSearches";
-import { TemperatureToggle } from "@/components/TemperatureToggle";
-import { WeatherCard } from "@/components/WeatherCard";
-import { WeatherGradient } from "@/components/WeatherGradient";
-import {
-  Animations,
-  BorderRadius,
-  Colors,
-  GlassMorphism,
-  Shadows,
-  Spacing,
-  Typography,
-} from "@/constants/DesignSystem";
-import { useTheme } from "@/contexts/ThemeContext";
-import { useRecentSearches } from "@/hooks/useRecentSearches";
-import { useScrollBlur } from "@/hooks/useScrollBlur";
-import { fetchWeatherByCity, WeatherData } from "@/utils/api";
-import { isConnected } from "@/utils/networkAndCache";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { memo, useCallback, useMemo, useState } from "react";
 import {
@@ -29,7 +9,6 @@ import {
   Platform,
   RefreshControl,
   ScrollView,
-  StatusBar,
   StyleSheet,
   Text,
   TextInput,
@@ -37,17 +16,70 @@ import {
   View,
 } from "react-native";
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
+// Components
+import BlurHeader from "@/components/BlurHeader";
+import { OfflineBanner } from "@/components/OfflineBanner";
+import { RecentSearches } from "@/components/RecentSearches";
+import { TemperatureToggle } from "@/components/TemperatureToggle";
+import { WeatherCard } from "@/components/WeatherCard";
+import { WeatherGradient } from "@/components/WeatherGradient";
 
-// Memoized search button component for better performance
-const SearchButton = memo<{
+// Constants and Design System
+import {
+  Animations,
+  BorderRadius,
+  Colors,
+  Shadows,
+  Spacing,
+  Typography,
+} from "@/constants/DesignSystem";
+
+// Contexts and Hooks
+import { useTheme } from "@/contexts/ThemeContext";
+import { useRecentSearches } from "@/hooks/useRecentSearches";
+import { useScrollBlur } from "@/hooks/useScrollBlur";
+
+// Utils
+import { fetchWeatherByCity, WeatherData } from "@/utils/api";
+import { isConnected } from "@/utils/networkAndCache";
+
+const { width: screenWidth } = Dimensions.get("window");
+
+// Types
+interface SearchButtonProps {
   searching: boolean;
   onPress: () => void;
-}>(({ searching, onPress }) => (
+}
+
+interface ClearButtonProps {
+  onPress: () => void;
+  hasQuery: boolean;
+  colors: any;
+}
+
+interface SearchContainerProps {
+  searchQuery: string;
+  searching: boolean;
+  onSearch: () => void;
+  onClear: () => void;
+  onInputChange: (text: string) => void;
+  colors: any;
+}
+
+interface WeatherResultProps {
+  searchResult: WeatherData;
+  onCityPress: (city: string) => void;
+  colors: any;
+}
+
+// Memoized Components
+const SearchButton = memo<SearchButtonProps>(({ searching, onPress }) => (
   <TouchableOpacity
     style={[styles.searchButton, searching && styles.searchButtonDisabled]}
     onPress={onPress}
     disabled={searching}
+    accessibilityLabel="Search weather"
+    accessibilityHint="Tap to search for weather in the entered city"
   >
     {searching ? (
       <ActivityIndicator size="small" color="white" />
@@ -59,42 +91,142 @@ const SearchButton = memo<{
 
 SearchButton.displayName = "SearchButton";
 
-// Memoized clear button component
-const ClearButton = memo<{
-  onPress: () => void;
-}>(({ onPress }) => (
-  <TouchableOpacity style={styles.clearButton} onPress={onPress}>
-    <Text style={styles.clearButtonText}>Clear</Text>
-  </TouchableOpacity>
-));
+const ClearButton = memo<ClearButtonProps>(({ onPress, hasQuery, colors }) => {
+  if (!hasQuery) return null;
+
+  return (
+    <TouchableOpacity
+      style={[
+        styles.clearButton,
+        {
+          backgroundColor: colors.background.secondary,
+          borderColor: colors.border.primary,
+        },
+      ]}
+      onPress={onPress}
+      accessibilityLabel="Clear search"
+      accessibilityHint="Tap to clear the search input"
+    >
+      <Text style={[styles.clearButtonText, { color: colors.text.secondary }]}>
+        Clear
+      </Text>
+    </TouchableOpacity>
+  );
+});
 
 ClearButton.displayName = "ClearButton";
 
+const SearchContainer = memo<SearchContainerProps>(
+  ({ searchQuery, searching, onSearch, onClear, onInputChange, colors }) => (
+    <View
+      style={[
+        styles.searchContainer,
+        {
+          backgroundColor: colors.background.card,
+          borderColor: colors.border.primary,
+        },
+      ]}
+    >
+      <View style={styles.searchInputContainer}>
+        <TextInput
+          style={[
+            styles.searchInput,
+            {
+              backgroundColor: colors.background.secondary,
+              borderColor: colors.border.primary,
+              color: colors.text.primary,
+            },
+          ]}
+          placeholder="Enter city name..."
+          placeholderTextColor={colors.text.tertiary}
+          value={searchQuery}
+          onChangeText={onInputChange}
+          onSubmitEditing={onSearch}
+          returnKeyType="search"
+          autoCapitalize="words"
+          autoCorrect={false}
+          accessibilityLabel="City search input"
+          accessibilityHint="Enter a city name to search for weather information"
+        />
+        <SearchButton searching={searching} onPress={onSearch} />
+      </View>
+
+      <ClearButton
+        onPress={onClear}
+        hasQuery={searchQuery.length > 0}
+        colors={colors}
+      />
+    </View>
+  )
+);
+
+SearchContainer.displayName = "SearchContainer";
+
+const WeatherResult = memo<WeatherResultProps>(
+  ({ searchResult, onCityPress, colors }) => (
+    <View
+      style={[
+        styles.resultContainer,
+        {
+          backgroundColor: colors.background.card,
+          borderColor: colors.border.primary,
+        },
+      ]}
+    >
+      <Text style={[styles.resultTitle, { color: colors.text.primary }]}>
+        Weather in {searchResult.city}
+      </Text>
+
+      <WeatherCard
+        weather={searchResult}
+        onPress={() => onCityPress(searchResult.city)}
+        isCompact={false}
+      />
+    </View>
+  )
+);
+
+WeatherResult.displayName = "WeatherResult";
+
+// Main Component
 export default function ExploreScreen() {
+  // State
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResult, setSearchResult] = useState<WeatherData | null>(null);
   const [searching, setSearching] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Hooks
   const { colors } = useTheme();
-  const { scrollY, scrollHandler } = useScrollBlur({
-    threshold: 25,
-  });
-
-  // Check and monitor network connectivity
-  const checkConnectivity = useCallback(async () => {
-    const connected = await isConnected();
-    setIsOffline(!connected);
-  }, []);
-
-  // Initial connectivity check
-  React.useEffect(() => {
-    checkConnectivity();
-  }, []);
+  const { scrollY, scrollHandler } = useScrollBlur({ threshold: 25 });
+  const {
+    recentSearches,
+    loading: recentSearchesLoading,
+    addRecentSearch,
+    removeRecentSearch,
+    clearRecentSearches,
+  } = useRecentSearches();
 
   // Animation values
   const fadeValue = useState(new Animated.Value(0))[0];
   const slideValue = useState(new Animated.Value(50))[0];
+
+  // Memoized values
+  const hasSearchQuery = useMemo(() => searchQuery.length > 0, [searchQuery]);
+  const shouldShowRecentSearches = useMemo(
+    () => !searchResult && !recentSearchesLoading,
+    [searchResult, recentSearchesLoading]
+  );
+  const iconSize = useMemo(
+    () => Math.max(32, screenWidth * 0.08),
+    [screenWidth]
+  );
+
+  // Effects
+  React.useEffect(() => {
+    checkConnectivity();
+  }, []);
 
   React.useEffect(() => {
     Animated.parallel([
@@ -111,15 +243,13 @@ export default function ExploreScreen() {
     ]).start();
   }, []);
 
-  // Recent searches hook
-  const {
-    recentSearches,
-    loading: recentSearchesLoading,
-    addRecentSearch,
-    removeRecentSearch,
-    clearRecentSearches,
-  } = useRecentSearches();
+  // Network connectivity
+  const checkConnectivity = useCallback(async () => {
+    const connected = await isConnected();
+    setIsOffline(!connected);
+  }, []);
 
+  // Search handlers
   const handleSearch = useCallback(async () => {
     if (!searchQuery.trim()) {
       Alert.alert("Error", "Please enter a city name");
@@ -136,9 +266,7 @@ export default function ExploreScreen() {
 
       if (result) {
         setSearchResult(result);
-        // Update search query to show normalized city name
         setSearchQuery(result.city);
-        // Add to recent searches
         await addRecentSearch(result.city);
       } else {
         Alert.alert(
@@ -154,19 +282,14 @@ export default function ExploreScreen() {
     } finally {
       setSearching(false);
     }
-  }, [searchQuery]);
+  }, [searchQuery, addRecentSearch]);
 
   const clearSearch = useCallback(() => {
     setSearchQuery("");
     setSearchResult(null);
   }, []);
 
-  const handleCityPress = useCallback((city: string) => {
-    Alert.alert("City Selected", `You selected ${city}`);
-  }, []);
-
   const handleInputChange = useCallback((text: string) => {
-    // Auto-capitalize first letter as user types
     if (text.length === 1) {
       setSearchQuery(text.toUpperCase());
     } else {
@@ -174,25 +297,7 @@ export default function ExploreScreen() {
     }
   }, []);
 
-  const handleRefresh = useCallback(async () => {
-    setRefreshing(true);
-    await checkConnectivity();
-
-    try {
-      if (searchResult) {
-        const result = await fetchWeatherByCity(searchResult.city);
-        if (result) {
-          setSearchResult(result);
-        }
-      }
-    } catch (error) {
-      console.error("Refresh error:", error);
-    } finally {
-      setRefreshing(false);
-    }
-  }, [searchResult]);
-
-  // Handle recent search tap - reload weather data for that city
+  // Recent search handlers
   const handleRecentSearchPress = useCallback(
     async (city: string) => {
       try {
@@ -205,7 +310,6 @@ export default function ExploreScreen() {
 
         if (result) {
           setSearchResult(result);
-          // Update recent search timestamp
           await addRecentSearch(result.city);
         } else {
           Alert.alert(
@@ -225,29 +329,41 @@ export default function ExploreScreen() {
     [addRecentSearch]
   );
 
-  // Memoized values for performance optimization
-  const hasSearchQuery = useMemo(() => searchQuery.length > 0, [searchQuery]);
-  const shouldShowRecentSearches = useMemo(
-    () => !searchResult && !recentSearchesLoading,
-    [searchResult, recentSearchesLoading]
-  );
+  // Refresh handler
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await checkConnectivity();
 
-  // Memoized icon size calculations
-  const iconSize = useMemo(
-    () => Math.max(32, screenWidth * 0.08),
-    [screenWidth]
-  );
+    try {
+      if (searchResult) {
+        const result = await fetchWeatherByCity(searchResult.city);
+        if (result) {
+          setSearchResult(result);
+        }
+      }
+    } catch (error) {
+      console.error("Refresh error:", error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [searchResult]);
+
+  const handleCityPress = useCallback((city: string) => {
+    Alert.alert("City Selected", `You selected ${city}`);
+  }, []);
 
   return (
     <View
       style={[styles.container, { backgroundColor: colors.background.primary }]}
     >
       <OfflineBanner visible={isOffline} />
+
       <WeatherGradient
         condition={searchResult?.condition || "partly cloudy"}
         intensity={0.2}
         style={styles.backgroundGradient}
       />
+
       <KeyboardAvoidingView
         style={styles.keyboardContainer}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -261,6 +377,7 @@ export default function ExploreScreen() {
             },
           ]}
         >
+          {/* Header */}
           <BlurHeader
             scrollY={scrollY}
             backgroundColor={colors.background.card}
@@ -280,62 +397,18 @@ export default function ExploreScreen() {
             </Text>
           </BlurHeader>
 
-          <View
-            style={[
-              styles.searchContainer,
-              {
-                backgroundColor: colors.background.card,
-                borderColor: colors.border.primary,
-              },
-            ]}
-          >
-            <View style={styles.searchInputContainer}>
-              <TextInput
-                style={[
-                  styles.searchInput,
-                  {
-                    backgroundColor: colors.background.secondary,
-                    borderColor: colors.border.primary,
-                    color: colors.text.primary,
-                  },
-                ]}
-                placeholder="Enter city name..."
-                placeholderTextColor={colors.text.tertiary}
-                value={searchQuery}
-                onChangeText={handleInputChange}
-                onSubmitEditing={handleSearch}
-                returnKeyType="search"
-                autoCapitalize="words"
-                autoCorrect={false}
-              />
-              <SearchButton searching={searching} onPress={handleSearch} />
-            </View>
+          {/* Search Section */}
+          <SearchContainer
+            searchQuery={searchQuery}
+            searching={searching}
+            onSearch={handleSearch}
+            onClear={clearSearch}
+            onInputChange={handleInputChange}
+            colors={colors}
+          />
 
-            {hasSearchQuery && (
-              <TouchableOpacity
-                style={[
-                  styles.clearButton,
-                  {
-                    backgroundColor: colors.background.secondary,
-                    borderColor: colors.border.primary,
-                  },
-                ]}
-                onPress={clearSearch}
-              >
-                <Text
-                  style={[
-                    styles.clearButtonText,
-                    { color: colors.text.secondary },
-                  ]}
-                >
-                  Clear
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-
+          {/* Content Section */}
           <View style={styles.contentContainer}>
-            {/* Recent Searches - shown when no search result */}
             {shouldShowRecentSearches && (
               <RecentSearches
                 recentSearches={recentSearches}
@@ -361,27 +434,11 @@ export default function ExploreScreen() {
                   />
                 }
               >
-                <View
-                  style={[
-                    styles.resultContainer,
-                    {
-                      backgroundColor: colors.background.card,
-                      borderColor: colors.border.primary,
-                    },
-                  ]}
-                >
-                  <Text
-                    style={[styles.resultTitle, { color: colors.text.primary }]}
-                  >
-                    Weather in {searchResult.city}
-                  </Text>
-
-                  <WeatherCard
-                    weather={searchResult}
-                    onPress={() => handleCityPress(searchResult.city)}
-                    isCompact={false}
-                  />
-                </View>
+                <WeatherResult
+                  searchResult={searchResult}
+                  onCityPress={handleCityPress}
+                  colors={colors}
+                />
               </ScrollView>
             )}
           </View>
@@ -391,6 +448,7 @@ export default function ExploreScreen() {
   );
 }
 
+// Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -403,7 +461,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
-
   keyboardContainer: {
     flex: 1,
   },
@@ -419,18 +476,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: Spacing.responsive.lg,
   },
-  header: {
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: Spacing.responsive.lg,
-    marginHorizontal: 0, // Remove left/right margins for full-width
-    marginTop: 0,
-    paddingTop:
-      Platform.OS === "ios" ? 60 : (StatusBar.currentHeight || 0) + 20,
-    borderRadius: 0, // Remove border radius for full-width
-    ...Shadows.md,
-    borderWidth: 1,
-  },
   headerTop: {
     flexDirection: "row",
     alignItems: "center",
@@ -441,7 +486,6 @@ const styles = StyleSheet.create({
   headerLeft: {
     flex: 1,
   },
-
   temperatureToggle: {
     marginRight: 0,
   },
@@ -497,39 +541,6 @@ const styles = StyleSheet.create({
     fontSize: Typography.fontSize.sm,
     fontWeight: Typography.fontWeight.medium,
   },
-  recentContainer: {
-    ...GlassMorphism.light,
-    margin: Spacing.responsive.base,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.responsive.lg,
-    ...Shadows.md,
-    borderWidth: 0,
-  },
-  recentTitle: {
-    fontSize: Typography.fontSize.lg,
-    fontWeight: Typography.fontWeight.semiBold,
-    color: Colors.neutral[900],
-    marginBottom: Spacing.lg,
-    letterSpacing: Typography.letterSpacing.tight,
-  },
-  recentList: {
-    gap: 8,
-  },
-  recentItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.lg,
-    backgroundColor: Colors.neutral[100],
-    borderRadius: BorderRadius.md,
-    gap: Spacing.md,
-  },
-  recentText: {
-    flex: 1,
-    fontSize: Typography.fontSize.base,
-    color: Colors.neutral[800],
-    fontWeight: Typography.fontWeight.medium,
-  },
   resultContainer: {
     margin: Spacing.responsive.base,
     borderRadius: BorderRadius.xl,
@@ -544,31 +555,5 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.lg,
     textAlign: "center",
     letterSpacing: Typography.letterSpacing.tight,
-  },
-  infoContainer: {
-    margin: Spacing.responsive.base,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.responsive.lg,
-    ...Shadows.md,
-    borderWidth: 1,
-  },
-  infoTitle: {
-    fontSize: Typography.fontSize.lg,
-    fontWeight: Typography.fontWeight.semiBold,
-    color: Colors.neutral[900],
-    marginBottom: Spacing.md,
-    letterSpacing: Typography.letterSpacing.tight,
-  },
-  infoText: {
-    fontSize: Typography.fontSize.sm,
-    color: Colors.neutral[600],
-    lineHeight: Typography.lineHeight.relaxed,
-    marginBottom: Spacing.sm,
-  },
-  infoSubtext: {
-    fontSize: Typography.fontSize.xs,
-    color: Colors.neutral[500],
-    fontStyle: "italic",
-    lineHeight: Typography.lineHeight.normal,
   },
 });
