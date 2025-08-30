@@ -27,13 +27,13 @@ import {
   Platform,
   RefreshControl,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -243,153 +243,148 @@ export default function ExploreScreen() {
         intensity={0.2}
         style={styles.backgroundGradient}
       />
-      <SafeAreaView style={styles.safeArea}>
-        <KeyboardAvoidingView
-          style={styles.keyboardContainer}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
+      <KeyboardAvoidingView
+        style={styles.keyboardContainer}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
+        <Animated.View
+          style={[
+            styles.mainContainer,
+            {
+              opacity: fadeValue,
+              transform: [{ translateY: slideValue }],
+            },
+          ]}
         >
-          <Animated.View
+          <View
             style={[
-              styles.mainContainer,
+              styles.header,
               {
-                opacity: fadeValue,
-                transform: [{ translateY: slideValue }],
+                backgroundColor: colors.background.card,
+                borderColor: colors.border.primary,
               },
             ]}
           >
-            <View
-              style={[
-                styles.header,
-                {
-                  backgroundColor: colors.background.card,
-                  borderColor: colors.border.primary,
-                },
-              ]}
-            >
-              <View style={styles.headerTop}>
-                <View style={styles.headerLeft}>
-                  <MaterialCommunityIcons
-                    name="weather-partly-cloudy"
-                    size={iconSize}
-                    color={Colors.primary[500]}
-                  />
-                </View>
-                <TemperatureToggle style={styles.temperatureToggle} />
+            <View style={styles.headerTop}>
+              <View style={styles.headerLeft}>
+                <MaterialCommunityIcons
+                  name="weather-partly-cloudy"
+                  size={iconSize}
+                  color={Colors.primary[500]}
+                />
               </View>
-              <Text style={[styles.title, { color: colors.text.primary }]}>
-                Weather Search
-              </Text>
+              <TemperatureToggle style={styles.temperatureToggle} />
+            </View>
+            <Text style={[styles.title, { color: colors.text.primary }]}>
+              Weather Search
+            </Text>
+          </View>
+
+          <View
+            style={[
+              styles.searchContainer,
+              {
+                backgroundColor: colors.background.card,
+                borderColor: colors.border.primary,
+              },
+            ]}
+          >
+            <View style={styles.searchInputContainer}>
+              <TextInput
+                style={[
+                  styles.searchInput,
+                  {
+                    backgroundColor: colors.background.secondary,
+                    borderColor: colors.border.primary,
+                    color: colors.text.primary,
+                  },
+                ]}
+                placeholder="Enter city name..."
+                placeholderTextColor={colors.text.tertiary}
+                value={searchQuery}
+                onChangeText={handleInputChange}
+                onSubmitEditing={handleSearch}
+                returnKeyType="search"
+                autoCapitalize="words"
+                autoCorrect={false}
+              />
+              <SearchButton searching={searching} onPress={handleSearch} />
             </View>
 
-            <View
-              style={[
-                styles.searchContainer,
-                {
-                  backgroundColor: colors.background.card,
-                  borderColor: colors.border.primary,
-                },
-              ]}
-            >
-              <View style={styles.searchInputContainer}>
-                <TextInput
+            {hasSearchQuery && (
+              <TouchableOpacity
+                style={[
+                  styles.clearButton,
+                  {
+                    backgroundColor: colors.background.secondary,
+                    borderColor: colors.border.primary,
+                  },
+                ]}
+                onPress={clearSearch}
+              >
+                <Text
                   style={[
-                    styles.searchInput,
-                    {
-                      backgroundColor: colors.background.secondary,
-                      borderColor: colors.border.primary,
-                      color: colors.text.primary,
-                    },
+                    styles.clearButtonText,
+                    { color: colors.text.secondary },
                   ]}
-                  placeholder="Enter city name..."
-                  placeholderTextColor={colors.text.tertiary}
-                  value={searchQuery}
-                  onChangeText={handleInputChange}
-                  onSubmitEditing={handleSearch}
-                  returnKeyType="search"
-                  autoCapitalize="words"
-                  autoCorrect={false}
-                />
-                <SearchButton searching={searching} onPress={handleSearch} />
-              </View>
+                >
+                  Clear
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
 
-              {hasSearchQuery && (
-                <TouchableOpacity
+          <View style={styles.contentContainer}>
+            {/* Recent Searches - shown when no search result */}
+            {shouldShowRecentSearches && (
+              <RecentSearches
+                recentSearches={recentSearches}
+                onSearchPress={handleRecentSearchPress}
+                onClearAll={clearRecentSearches}
+                onRemoveSearch={removeRecentSearch}
+              />
+            )}
+
+            {searchResult && (
+              <ScrollView
+                style={styles.scrollView}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContent}
+                refreshControl={
+                  <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={handleRefresh}
+                    colors={[Colors.primary[500]]}
+                    tintColor={colors.text.primary}
+                  />
+                }
+              >
+                <View
                   style={[
-                    styles.clearButton,
+                    styles.resultContainer,
                     {
-                      backgroundColor: colors.background.secondary,
+                      backgroundColor: colors.background.card,
                       borderColor: colors.border.primary,
                     },
                   ]}
-                  onPress={clearSearch}
                 >
                   <Text
-                    style={[
-                      styles.clearButtonText,
-                      { color: colors.text.secondary },
-                    ]}
+                    style={[styles.resultTitle, { color: colors.text.primary }]}
                   >
-                    Clear
+                    Weather in {searchResult.city}
                   </Text>
-                </TouchableOpacity>
-              )}
-            </View>
 
-            <View style={styles.contentContainer}>
-              {/* Recent Searches - shown when no search result */}
-              {shouldShowRecentSearches && (
-                <RecentSearches
-                  recentSearches={recentSearches}
-                  onSearchPress={handleRecentSearchPress}
-                  onClearAll={clearRecentSearches}
-                  onRemoveSearch={removeRecentSearch}
-                />
-              )}
-
-              {searchResult && (
-                <ScrollView
-                  style={styles.scrollView}
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={styles.scrollContent}
-                  refreshControl={
-                    <RefreshControl
-                      refreshing={refreshing}
-                      onRefresh={handleRefresh}
-                      colors={[Colors.primary[500]]}
-                      tintColor={colors.text.primary}
-                    />
-                  }
-                >
-                  <View
-                    style={[
-                      styles.resultContainer,
-                      {
-                        backgroundColor: colors.background.card,
-                        borderColor: colors.border.primary,
-                      },
-                    ]}
-                  >
-                    <Text
-                      style={[
-                        styles.resultTitle,
-                        { color: colors.text.primary },
-                      ]}
-                    >
-                      Weather in {searchResult.city}
-                    </Text>
-
-                    <WeatherCard
-                      weather={searchResult}
-                      onPress={() => handleCityPress(searchResult.city)}
-                      isCompact={false}
-                    />
-                  </View>
-                </ScrollView>
-              )}
-            </View>
-          </Animated.View>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+                  <WeatherCard
+                    weather={searchResult}
+                    onPress={() => handleCityPress(searchResult.city)}
+                    isCompact={false}
+                  />
+                </View>
+              </ScrollView>
+            )}
+          </View>
+        </Animated.View>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -406,9 +401,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
-  safeArea: {
-    flex: 1,
-  },
+
   keyboardContainer: {
     flex: 1,
   },
@@ -428,9 +421,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: Spacing.responsive.lg,
-    marginHorizontal: Spacing.responsive.base,
-    marginTop: Spacing.responsive.base,
-    borderRadius: BorderRadius.xl,
+    marginHorizontal: 0, // Remove left/right margins for full-width
+    marginTop: 0,
+    paddingTop:
+      Platform.OS === "ios" ? 60 : (StatusBar.currentHeight || 0) + 20,
+    borderRadius: 0, // Remove border radius for full-width
     ...Shadows.md,
     borderWidth: 1,
   },

@@ -5,7 +5,6 @@ import { WeatherCard } from "@/components/WeatherCard";
 import { WeatherGradient } from "@/components/WeatherGradient";
 import {
   Animations,
-  BorderRadius,
   Colors,
   GlassMorphism,
   Shadows,
@@ -23,13 +22,14 @@ import {
   Animated,
   Dimensions,
   FlatList,
+  Platform,
   RefreshControl,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -189,59 +189,55 @@ export default function FavoritesScreen() {
         intensity={0.2}
         style={styles.backgroundGradient}
       />
-      <SafeAreaView style={styles.safeArea}>
-        <Animated.View
-          style={[styles.contentContainer, { opacity: fadeValue }]}
+      <Animated.View style={[styles.contentContainer, { opacity: fadeValue }]}>
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: colors.background.card,
+              borderColor: colors.border.primary,
+            },
+          ]}
         >
-          <View
-            style={[
-              styles.header,
-              {
-                backgroundColor: colors.background.card,
-                borderColor: colors.border.primary,
-              },
-            ]}
-          >
-            <View style={styles.headerTop}>
-              <View style={styles.headerLeft}>
-                <MaterialCommunityIcons
-                  name="heart"
-                  size={Math.max(32, screenWidth * 0.08)}
-                  color={Colors.error[500]}
-                />
-              </View>
-              <TemperatureToggle style={styles.temperatureToggle} />
+          <View style={styles.headerTop}>
+            <View style={styles.headerLeft}>
+              <MaterialCommunityIcons
+                name="heart"
+                size={Math.max(32, screenWidth * 0.08)}
+                color={Colors.error[500]}
+              />
             </View>
-            <Text style={[styles.title, { color: colors.text.primary }]}>
-              Favorite Cities
-            </Text>
-            <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
-              Your personalized weather collection
-            </Text>
+            <TemperatureToggle style={styles.temperatureToggle} />
           </View>
+          <Text style={[styles.title, { color: colors.text.primary }]}>
+            Favorite Cities
+          </Text>
+          <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
+            Your personalized weather collection
+          </Text>
+        </View>
 
-          <FlatList
-            data={favorites}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderWeatherCard}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={[
-              styles.listContainer,
-              favorites.length === 0 && styles.emptyListContainer,
-            ]}
-            ListHeaderComponent={favorites.length > 0 ? renderHeader : null}
-            ListEmptyComponent={renderEmptyState}
-            initialNumToRender={5}
-            maxToRenderPerBatch={10}
-            windowSize={10}
-            removeClippedSubviews={true}
-            numColumns={1}
-          />
-        </Animated.View>
-      </SafeAreaView>
+        <FlatList
+          data={favorites}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={renderWeatherCard}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={[
+            styles.listContainer,
+            favorites.length === 0 && styles.emptyListContainer,
+          ]}
+          ListHeaderComponent={favorites.length > 0 ? renderHeader : null}
+          ListEmptyComponent={renderEmptyState}
+          initialNumToRender={5}
+          maxToRenderPerBatch={10}
+          windowSize={10}
+          removeClippedSubviews={true}
+          numColumns={1}
+        />
+      </Animated.View>
     </View>
   );
 }
@@ -258,9 +254,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
-  safeArea: {
-    flex: 1,
-  },
+
   contentContainer: {
     flex: 1,
   },
@@ -269,9 +263,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: Spacing.responsive.lg,
-    marginHorizontal: Spacing.responsive.base,
-    marginTop: Spacing.responsive.base,
-    borderRadius: BorderRadius.xl,
+    marginHorizontal: 0, // Remove left/right margins for full-width
+    marginTop: 0,
+    paddingTop:
+      Platform.OS === "ios" ? 60 : (StatusBar.currentHeight || 0) + 20,
+    borderRadius: 0, // Remove border radius for full-width
     ...Shadows.md,
     borderWidth: 0,
   },

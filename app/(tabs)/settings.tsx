@@ -14,13 +14,14 @@ import React, { useState } from "react";
 import {
   Animated,
   Dimensions,
+  Platform,
   ScrollView,
+  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
@@ -95,146 +96,142 @@ export default function SettingsScreen() {
         intensity={0.15}
         style={styles.backgroundGradient}
       />
-      <SafeAreaView style={styles.safeArea}>
-        <Animated.View
-          style={[styles.contentContainer, { opacity: fadeValue }]}
+      <Animated.View style={[styles.contentContainer, { opacity: fadeValue }]}>
+        {/* Header */}
+        <View
+          style={[
+            styles.header,
+            {
+              backgroundColor: colors.background.card,
+              borderColor: colors.border.primary,
+            },
+          ]}
         >
-          {/* Header */}
-          <View
-            style={[
-              styles.header,
-              {
-                backgroundColor: colors.background.card,
-                borderColor: colors.border.primary,
-              },
-            ]}
-          >
-            <View style={styles.headerTop}>
-              <View style={styles.headerLeft}>
-                <Ionicons
-                  name="settings"
-                  size={Math.max(32, screenWidth * 0.08)}
-                  color={colors.icon.accent}
-                />
-              </View>
+          <View style={styles.headerTop}>
+            <View style={styles.headerLeft}>
+              <Ionicons
+                name="settings"
+                size={Math.max(32, screenWidth * 0.08)}
+                color={colors.icon.accent}
+              />
             </View>
-            <Text style={[styles.title, { color: colors.text.primary }]}>
-              Settings
-            </Text>
-            <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
-              Customize your weather experience
-            </Text>
           </View>
+          <Text style={[styles.title, { color: colors.text.primary }]}>
+            Settings
+          </Text>
+          <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
+            Customize your weather experience
+          </Text>
+        </View>
 
-          <ScrollView
-            style={styles.scrollContainer}
-            contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Theme Settings */}
-            <SettingsSection title="Appearance" icon="color-palette">
-              <ThemeToggle />
-            </SettingsSection>
+        <ScrollView
+          style={styles.scrollContainer}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Theme Settings */}
+          <SettingsSection title="Appearance" icon="color-palette">
+            <ThemeToggle />
+          </SettingsSection>
 
-            {/* Temperature Settings */}
-            <SettingsSection title="Temperature" icon="thermometer">
-              <View style={styles.temperatureSection}>
+          {/* Temperature Settings */}
+          <SettingsSection title="Temperature" icon="thermometer">
+            <View style={styles.temperatureSection}>
+              <Text
+                style={[
+                  styles.settingDescription,
+                  { color: colors.text.secondary },
+                ]}
+              >
+                Choose your preferred temperature unit for weather display.
+              </Text>
+              <TemperatureToggle />
+            </View>
+          </SettingsSection>
+
+          {/* App Information */}
+          <SettingsSection title="About" icon="information-circle">
+            <View style={styles.aboutSection}>
+              <InfoItem label="Version" value="1.0.0" icon="tag" />
+              <InfoItem
+                label="Current Theme"
+                value={activeTheme === "light" ? "Light Mode" : "Dark Mode"}
+                icon="theme-light-dark"
+              />
+              <InfoItem
+                label="Last Updated"
+                value={new Date().toLocaleDateString()}
+                icon="calendar"
+              />
+            </View>
+          </SettingsSection>
+
+          {/* Support Section */}
+          <SettingsSection title="Support" icon="help-circle">
+            <View style={styles.supportSection}>
+              <TouchableOpacity
+                style={[
+                  styles.supportButton,
+                  {
+                    backgroundColor: colors.background.secondary,
+                    borderColor: colors.border.primary,
+                  },
+                ]}
+                activeOpacity={0.7}
+              >
+                <MaterialCommunityIcons
+                  name="email"
+                  size={20}
+                  color={colors.icon.secondary}
+                />
                 <Text
                   style={[
-                    styles.settingDescription,
-                    { color: colors.text.secondary },
+                    styles.supportButtonText,
+                    { color: colors.text.primary },
                   ]}
                 >
-                  Choose your preferred temperature unit for weather display.
+                  Contact Support
                 </Text>
-                <TemperatureToggle />
-              </View>
-            </SettingsSection>
-
-            {/* App Information */}
-            <SettingsSection title="About" icon="information-circle">
-              <View style={styles.aboutSection}>
-                <InfoItem label="Version" value="1.0.0" icon="tag" />
-                <InfoItem
-                  label="Current Theme"
-                  value={activeTheme === "light" ? "Light Mode" : "Dark Mode"}
-                  icon="theme-light-dark"
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color={colors.icon.secondary}
                 />
-                <InfoItem
-                  label="Last Updated"
-                  value={new Date().toLocaleDateString()}
-                  icon="calendar"
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.supportButton,
+                  {
+                    backgroundColor: colors.background.secondary,
+                    borderColor: colors.border.primary,
+                  },
+                ]}
+                activeOpacity={0.7}
+              >
+                <MaterialCommunityIcons
+                  name="star"
+                  size={20}
+                  color={colors.icon.secondary}
                 />
-              </View>
-            </SettingsSection>
-
-            {/* Support Section */}
-            <SettingsSection title="Support" icon="help-circle">
-              <View style={styles.supportSection}>
-                <TouchableOpacity
+                <Text
                   style={[
-                    styles.supportButton,
-                    {
-                      backgroundColor: colors.background.secondary,
-                      borderColor: colors.border.primary,
-                    },
+                    styles.supportButtonText,
+                    { color: colors.text.primary },
                   ]}
-                  activeOpacity={0.7}
                 >
-                  <MaterialCommunityIcons
-                    name="email"
-                    size={20}
-                    color={colors.icon.secondary}
-                  />
-                  <Text
-                    style={[
-                      styles.supportButtonText,
-                      { color: colors.text.primary },
-                    ]}
-                  >
-                    Contact Support
-                  </Text>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={16}
-                    color={colors.icon.secondary}
-                  />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.supportButton,
-                    {
-                      backgroundColor: colors.background.secondary,
-                      borderColor: colors.border.primary,
-                    },
-                  ]}
-                  activeOpacity={0.7}
-                >
-                  <MaterialCommunityIcons
-                    name="star"
-                    size={20}
-                    color={colors.icon.secondary}
-                  />
-                  <Text
-                    style={[
-                      styles.supportButtonText,
-                      { color: colors.text.primary },
-                    ]}
-                  >
-                    Rate This App
-                  </Text>
-                  <Ionicons
-                    name="chevron-forward"
-                    size={16}
-                    color={colors.icon.secondary}
-                  />
-                </TouchableOpacity>
-              </View>
-            </SettingsSection>
-          </ScrollView>
-        </Animated.View>
-      </SafeAreaView>
+                  Rate This App
+                </Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={16}
+                  color={colors.icon.secondary}
+                />
+              </TouchableOpacity>
+            </View>
+          </SettingsSection>
+        </ScrollView>
+      </Animated.View>
     </View>
   );
 }
@@ -250,9 +247,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
-  safeArea: {
-    flex: 1,
-  },
+
   contentContainer: {
     flex: 1,
   },
@@ -260,9 +255,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: Spacing.responsive.lg,
-    marginHorizontal: Spacing.responsive.base,
-    marginTop: Spacing.responsive.base,
-    borderRadius: BorderRadius.xl,
+    marginHorizontal: 0, // Remove left/right margins for full-width
+    marginTop: 0,
+    paddingTop:
+      Platform.OS === "ios" ? 60 : (StatusBar.currentHeight || 0) + 20,
+    borderRadius: 0, // Remove border radius for full-width
     ...Shadows.md,
     borderWidth: 1,
   },
