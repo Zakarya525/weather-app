@@ -1,3 +1,4 @@
+import BlurHeader from "@/components/BlurHeader";
 import { ErrorMessage } from "@/components/ErrorMessage";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { OfflineBanner } from "@/components/OfflineBanner";
@@ -13,6 +14,7 @@ import {
   Typography,
 } from "@/constants/DesignSystem";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useScrollBlur } from "@/hooks/useScrollBlur";
 import { fetchWeatherData, WeatherData } from "@/utils/api";
 import { isConnected } from "@/utils/networkAndCache";
 import { getAccessibleWeatherTheme } from "@/utils/weatherTheme";
@@ -44,10 +46,9 @@ export default function HomeScreen() {
   const [currentWeatherIndex, setCurrentWeatherIndex] = useState(0);
   const [isOffline, setIsOffline] = useState(false);
   const { colors } = useTheme();
-
-  // Animation refs
-  const scrollY = useRef(new Animated.Value(0)).current;
-  const headerOpacity = useRef(new Animated.Value(1)).current;
+  const { scrollY, scrollHandler } = useScrollBlur({
+    threshold: 30,
+  });
   const titleScale = useRef(new Animated.Value(1)).current;
   const iconScale = useRef(new Animated.Value(1)).current;
 
@@ -216,15 +217,7 @@ export default function HomeScreen() {
         style={styles.backgroundGradient}
       />
       <Animated.View style={[styles.contentContainer, { opacity: fadeValue }]}>
-        <View
-          style={[
-            styles.header,
-            {
-              backgroundColor: colors.background.card,
-              borderColor: colors.border.primary,
-            },
-          ]}
-        >
+        <BlurHeader scrollY={scrollY} backgroundColor={colors.background.card}>
           <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
               <MaterialCommunityIcons
@@ -267,12 +260,14 @@ export default function HomeScreen() {
           >
             {weatherData.length} cities available
           </Text>
-        </View>
+        </BlurHeader>
 
         <Animated.FlatList
           data={weatherData}
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderWeatherCard}
+          onScroll={scrollHandler}
+          scrollEventThrottle={16}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -288,11 +283,6 @@ export default function HomeScreen() {
           maxToRenderPerBatch={10}
           windowSize={10}
           removeClippedSubviews={true}
-          onScroll={Animated.event(
-            [{ nativeEvent: { contentOffset: { y: scrollY } } }],
-            { useNativeDriver: false }
-          )}
-          scrollEventThrottle={16}
           bounces={true}
           decelerationRate="normal"
         />

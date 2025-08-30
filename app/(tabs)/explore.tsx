@@ -1,3 +1,4 @@
+import BlurHeader from "@/components/BlurHeader";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { RecentSearches } from "@/components/RecentSearches";
 import { TemperatureToggle } from "@/components/TemperatureToggle";
@@ -14,6 +15,7 @@ import {
 } from "@/constants/DesignSystem";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useRecentSearches } from "@/hooks/useRecentSearches";
+import { useScrollBlur } from "@/hooks/useScrollBlur";
 import { fetchWeatherByCity, WeatherData } from "@/utils/api";
 import { isConnected } from "@/utils/networkAndCache";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -75,6 +77,9 @@ export default function ExploreScreen() {
   const [isOffline, setIsOffline] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const { colors } = useTheme();
+  const { scrollY, scrollHandler } = useScrollBlur({
+    threshold: 25,
+  });
 
   // Check and monitor network connectivity
   const checkConnectivity = useCallback(async () => {
@@ -256,14 +261,9 @@ export default function ExploreScreen() {
             },
           ]}
         >
-          <View
-            style={[
-              styles.header,
-              {
-                backgroundColor: colors.background.card,
-                borderColor: colors.border.primary,
-              },
-            ]}
+          <BlurHeader
+            scrollY={scrollY}
+            backgroundColor={colors.background.card}
           >
             <View style={styles.headerTop}>
               <View style={styles.headerLeft}>
@@ -278,7 +278,7 @@ export default function ExploreScreen() {
             <Text style={[styles.title, { color: colors.text.primary }]}>
               Weather Search
             </Text>
-          </View>
+          </BlurHeader>
 
           <View
             style={[
@@ -350,6 +350,8 @@ export default function ExploreScreen() {
                 style={styles.scrollView}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
+                onScroll={scrollHandler}
+                scrollEventThrottle={16}
                 refreshControl={
                   <RefreshControl
                     refreshing={refreshing}

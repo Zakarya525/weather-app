@@ -1,3 +1,4 @@
+import BlurHeader from "@/components/BlurHeader";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { OfflineBanner } from "@/components/OfflineBanner";
 import { TemperatureToggle } from "@/components/TemperatureToggle";
@@ -13,6 +14,7 @@ import {
 } from "@/constants/DesignSystem";
 import { useFavorites } from "@/contexts/FavoritesContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useScrollBlur } from "@/hooks/useScrollBlur";
 import { WeatherData } from "@/utils/api";
 import { isConnected } from "@/utils/networkAndCache";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -37,6 +39,9 @@ export default function FavoritesScreen() {
   const { favorites, loading, removeFromFavorites, clearAllFavorites } =
     useFavorites();
   const { colors } = useTheme();
+  const { scrollY, scrollHandler } = useScrollBlur({
+    threshold: 25,
+  });
   const [refreshing, setRefreshing] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
 
@@ -190,15 +195,7 @@ export default function FavoritesScreen() {
         style={styles.backgroundGradient}
       />
       <Animated.View style={[styles.contentContainer, { opacity: fadeValue }]}>
-        <View
-          style={[
-            styles.header,
-            {
-              backgroundColor: colors.background.card,
-              borderColor: colors.border.primary,
-            },
-          ]}
-        >
+        <BlurHeader scrollY={scrollY} backgroundColor={colors.background.card}>
           <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
               <MaterialCommunityIcons
@@ -215,12 +212,14 @@ export default function FavoritesScreen() {
           <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
             Your personalized weather collection
           </Text>
-        </View>
+        </BlurHeader>
 
         <FlatList
           data={favorites}
           keyExtractor={(item) => item.id.toString()}
           renderItem={renderWeatherCard}
+          onScroll={scrollHandler}
+          scrollEventThrottle={16}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }

@@ -1,3 +1,4 @@
+import BlurHeader from "@/components/BlurHeader";
 import { TemperatureToggle } from "@/components/TemperatureToggle";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { WeatherGradient } from "@/components/WeatherGradient";
@@ -9,6 +10,7 @@ import {
   Typography,
 } from "@/constants/DesignSystem";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useScrollBlur } from "@/hooks/useScrollBlur";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
@@ -27,6 +29,9 @@ const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 export default function SettingsScreen() {
   const { colors, activeTheme } = useTheme();
+  const { scrollY, scrollHandler } = useScrollBlur({
+    threshold: 25,
+  });
 
   // Animation values
   const fadeValue = useState(new Animated.Value(0))[0];
@@ -98,15 +103,7 @@ export default function SettingsScreen() {
       />
       <Animated.View style={[styles.contentContainer, { opacity: fadeValue }]}>
         {/* Header */}
-        <View
-          style={[
-            styles.header,
-            {
-              backgroundColor: colors.background.card,
-              borderColor: colors.border.primary,
-            },
-          ]}
-        >
+        <BlurHeader scrollY={scrollY} backgroundColor={colors.background.card}>
           <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
               <Ionicons
@@ -122,12 +119,14 @@ export default function SettingsScreen() {
           <Text style={[styles.subtitle, { color: colors.text.secondary }]}>
             Customize your weather experience
           </Text>
-        </View>
+        </BlurHeader>
 
         <ScrollView
           style={styles.scrollContainer}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          onScroll={scrollHandler}
+          scrollEventThrottle={16}
         >
           {/* Theme Settings */}
           <SettingsSection title="Appearance" icon="color-palette">
