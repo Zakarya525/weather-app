@@ -38,15 +38,21 @@ export default function BlurHeader({
     extrapolate: "clamp",
   });
 
+  const blurOpacity = scrollY.interpolate({
+    inputRange: [0, blurThreshold / 2, blurThreshold],
+    outputRange: [0.4, 0.7, 0.9],
+    extrapolate: "clamp",
+  });
+
   const shadowOpacity = scrollY.interpolate({
     inputRange: [0, blurThreshold / 2, blurThreshold],
-    outputRange: [0, 0.06, 0.15],
+    outputRange: [0, 0.1, 0.25],
     extrapolate: "clamp",
   });
 
   const borderOpacity = scrollY.interpolate({
     inputRange: [0, blurThreshold / 3, blurThreshold],
-    outputRange: [0.03, 0.15, 0.3],
+    outputRange: [0.05, 0.2, 0.4],
     extrapolate: "clamp",
   });
 
@@ -64,7 +70,7 @@ export default function BlurHeader({
         style,
       ]}
     >
-      {/* Blur Effect Background */}
+      {/* Main Blur Effect */}
       <Animated.View
         style={[
           StyleSheet.absoluteFillObject,
@@ -78,49 +84,29 @@ export default function BlurHeader({
           style={[
             StyleSheet.absoluteFillObject,
             {
-              opacity: scrollY.interpolate({
-                inputRange: [0, blurThreshold / 2, blurThreshold],
-                outputRange: [0, 0.25, 0.4],
-                extrapolate: "clamp",
-              }),
+              opacity: blurOpacity,
             },
           ]}
         >
           <BlurView
-            intensity={40}
+            intensity={120}
             tint={isDarkActive ? "dark" : "light"}
             style={StyleSheet.absoluteFillObject}
           />
         </Animated.View>
       </Animated.View>
 
-      {/* Primary Background with Transparency */}
-      <Animated.View
-        style={[
-          StyleSheet.absoluteFillObject,
-          {
-            backgroundColor: backgroundColor || colors.background.card,
-            opacity: scrollY.interpolate({
-              inputRange: [0, blurThreshold / 4],
-              outputRange: [0.75, 0.9],
-              extrapolate: "clamp",
-            }),
-          },
-        ]}
-        pointerEvents="none"
-      />
-
-      {/* Glass Morphism Overlay */}
+      {/* Frosted Glass Overlay */}
       <Animated.View
         style={[
           StyleSheet.absoluteFillObject,
           {
             backgroundColor: isDarkActive
-              ? "rgba(28, 28, 30, 0.15)"
-              : "rgba(255, 255, 255, 0.15)",
+              ? "rgba(28, 28, 30, 0.3)"
+              : "rgba(255, 255, 255, 0.4)",
             opacity: scrollY.interpolate({
               inputRange: [0, blurThreshold / 2],
-              outputRange: [0, 0.5],
+              outputRange: [0.5, 0.8],
               extrapolate: "clamp",
             }),
           },
@@ -128,14 +114,14 @@ export default function BlurHeader({
         pointerEvents="none"
       />
 
-      {/* Subtle Depth Overlay */}
+      {/* Subtle Depth Layer */}
       <Animated.View
         style={[
           StyleSheet.absoluteFillObject,
           {
             backgroundColor: isDarkActive
-              ? "rgba(0, 0, 0, 0.02)"
-              : "rgba(0, 0, 0, 0.008)",
+              ? "rgba(0, 0, 0, 0.1)"
+              : "rgba(0, 0, 0, 0.05)",
             opacity: scrollY.interpolate({
               inputRange: [0, blurThreshold],
               outputRange: [0, 1],
@@ -146,25 +132,29 @@ export default function BlurHeader({
         pointerEvents="none"
       />
 
-      {/* Animated Shadow */}
+      {/* Enhanced Shadow */}
       <Animated.View
         style={[
           StyleSheet.absoluteFillObject,
           {
-            ...Shadows.md,
+            ...Shadows.lg,
             shadowOpacity,
+            shadowRadius: 25,
+            elevation: 15,
           },
         ]}
         pointerEvents="none"
       />
 
-      {/* Animated Border */}
+      {/* Subtle Border */}
       <Animated.View
         style={[
           StyleSheet.absoluteFillObject,
           {
-            borderBottomWidth: 0.5,
-            borderBottomColor: colors.border.primary,
+            borderBottomWidth: 1,
+            borderBottomColor: isDarkActive
+              ? "rgba(255, 255, 255, 0.1)"
+              : "rgba(0, 0, 0, 0.1)",
             opacity: borderOpacity,
           },
         ]}
@@ -186,12 +176,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     zIndex: 1000,
-    elevation: 8,
-    overflow: "visible", // Critical: allow child elements to render above
+    elevation: 15,
+    overflow: "visible",
     ...(Platform.OS === "android" && {
       minHeight: 80,
       paddingBottom: Spacing.responsive.sm,
-      // Ensure interactive elements aren't clipped
       paddingTop: Spacing.responsive.md + 5,
     }),
   },
@@ -201,10 +190,9 @@ const styles = StyleSheet.create({
     width: "100%",
     paddingHorizontal: Math.max(16, screenWidth * 0.04),
     paddingBottom: Platform.OS === "android" ? Spacing.sm : 0,
-    overflow: "visible", // Allow interactive elements to be visible
+    overflow: "visible",
     ...(Platform.OS === "android" && {
       minHeight: 60,
-      // Extra padding to prevent clipping of elevated elements
       paddingVertical: Spacing.sm + 2,
     }),
   },
