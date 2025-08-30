@@ -1,5 +1,6 @@
 import { Shadows, Spacing } from "@/constants/DesignSystem";
 import { useTheme } from "@/contexts/ThemeContext";
+import { BlurView } from "expo-blur";
 import { ReactNode } from "react";
 import {
   Animated,
@@ -69,7 +70,36 @@ export default function BlurHeader({
         style,
       ]}
     >
-      {/* Primary Background */}
+      {/* Blur Effect Background */}
+      <Animated.View
+        style={[
+          StyleSheet.absoluteFillObject,
+          {
+            overflow: "hidden",
+          },
+        ]}
+      >
+        <Animated.View
+          style={[
+            StyleSheet.absoluteFillObject,
+            {
+              opacity: scrollY.interpolate({
+                inputRange: [0, blurThreshold / 2, blurThreshold],
+                outputRange: [0, 0.3, 0.5],
+                extrapolate: "clamp",
+              }),
+            },
+          ]}
+        >
+          <BlurView
+            intensity={50}
+            tint={isDarkActive ? "dark" : "light"}
+            style={StyleSheet.absoluteFillObject}
+          />
+        </Animated.View>
+      </Animated.View>
+
+      {/* Primary Background with Transparency */}
       <Animated.View
         style={[
           StyleSheet.absoluteFillObject,
@@ -77,7 +107,7 @@ export default function BlurHeader({
             backgroundColor: backgroundColor || colors.background.card,
             opacity: scrollY.interpolate({
               inputRange: [0, blurThreshold / 4],
-              outputRange: [1, 0.95],
+              outputRange: [0.7, 0.85],
               extrapolate: "clamp",
             }),
           },
@@ -90,11 +120,11 @@ export default function BlurHeader({
           StyleSheet.absoluteFillObject,
           {
             backgroundColor: isDarkActive
-              ? "rgba(28, 28, 30, 0.3)"
-              : "rgba(255, 255, 255, 0.3)",
+              ? "rgba(28, 28, 30, 0.2)"
+              : "rgba(255, 255, 255, 0.2)",
             opacity: scrollY.interpolate({
               inputRange: [0, blurThreshold / 2],
-              outputRange: [0, 0.8],
+              outputRange: [0, 0.6],
               extrapolate: "clamp",
             }),
           },
@@ -107,8 +137,8 @@ export default function BlurHeader({
           StyleSheet.absoluteFillObject,
           {
             backgroundColor: isDarkActive
-              ? "rgba(0, 0, 0, 0.05)"
-              : "rgba(0, 0, 0, 0.02)",
+              ? "rgba(0, 0, 0, 0.03)"
+              : "rgba(0, 0, 0, 0.01)",
             opacity: scrollY.interpolate({
               inputRange: [0, blurThreshold],
               outputRange: [0, 1],

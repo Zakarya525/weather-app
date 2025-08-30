@@ -217,7 +217,11 @@ export default function HomeScreen() {
         style={styles.backgroundGradient}
       />
       <Animated.View style={[styles.contentContainer, { opacity: fadeValue }]}>
-        <BlurHeader scrollY={scrollY} backgroundColor={colors.background.card}>
+        <BlurHeader
+          scrollY={scrollY}
+          backgroundColor={colors.background.card}
+          style={styles.blurHeader}
+        >
           <View style={styles.headerTop}>
             <View style={styles.headerLeft}>
               <MaterialCommunityIcons
@@ -306,6 +310,13 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
   },
+  blurHeader: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1000,
+  },
 
   header: {
     ...GlassMorphism.light,
@@ -359,7 +370,8 @@ const styles = StyleSheet.create({
     marginTop: Spacing.xs,
   },
   listContainer: {
-    paddingVertical: Spacing.responsive.lg,
+    paddingTop: HEADER_MAX_HEIGHT + Spacing.responsive.lg,
+    paddingBottom: Spacing.responsive.lg,
     paddingHorizontal: Spacing.xs,
   },
   emptyContainer: {
